@@ -118,6 +118,30 @@ document.addEventListener("DOMContentLoaded", () => {
         lucide.createIcons();
     });
 
+    const mobileNavOverlay = document.getElementById("mobile-nav-overlay");
+    const sidebarToggleBtn = document.getElementById("btn-sidebar-toggle");
+    const appContainer = document.querySelector(".app-container");
+
+    function closeMobileSidebar() {
+        if (appContainer) appContainer.classList.remove("sidebar-open");
+    }
+
+    if (sidebarToggleBtn) {
+        sidebarToggleBtn.addEventListener("click", () => {
+            if (appContainer) appContainer.classList.toggle("sidebar-open");
+        });
+    }
+
+    if (mobileNavOverlay) {
+        mobileNavOverlay.addEventListener("click", closeMobileSidebar);
+    }
+
+    document.querySelectorAll(".sidebar-menu .menu-item").forEach(item => {
+        item.addEventListener("click", () => {
+            if (window.innerWidth <= 992) closeMobileSidebar();
+        });
+    });
+
     // Copying & Printing Calculator Logic
     const calcService = document.getElementById("print-calc-service");
     const calcColor = document.getElementById("print-calc-color");
