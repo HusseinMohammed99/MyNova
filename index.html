@@ -1,0 +1,744 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>مكتب نوفا للموبايلات والاكسسوارات - نظام الإدارة</title>
+    <!-- Google Fonts - Tajawal -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800;900&display=swap" rel="stylesheet">
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo-icon">
+                    <i data-lucide="smartphone"></i>
+                </div>
+                <div class="logo-text">
+                    <h2>مكتب نوفا</h2>
+                    <span>للموبايلات والاكسسوارات</span>
+                </div>
+            </div>
+            
+            <nav class="sidebar-menu">
+                <a href="#" class="menu-item active" data-tab="dashboard">
+                    <i data-lucide="layout-dashboard"></i>
+                    <span>لوحة التحكم</span>
+                </a>
+                <a href="#" class="menu-item" data-tab="pos">
+                    <i data-lucide="shopping-cart"></i>
+                    <span>نقطة البيع (POS)</span>
+                </a>
+                <a href="#" class="menu-item" data-tab="inventory">
+                    <i data-lucide="package"></i>
+                    <span>إدارة المخزون</span>
+                </a>
+                <a href="#" class="menu-item" data-tab="maintenance">
+                    <i data-lucide="wrench"></i>
+                    <span>قسم الصيانة</span>
+                </a>
+                <a href="#" class="menu-item" data-tab="customers">
+                    <i data-lucide="users"></i>
+                    <span>إدارة الزبائن</span>
+                </a>
+                <a href="#" class="menu-item" data-tab="accounting">
+                    <i data-lucide="wallet"></i>
+                    <span>المحاسبة والتقارير</span>
+                </a>
+            </nav>
+
+            <div class="sidebar-footer">
+                <p>إصدار النظام v1.0.0</p>
+                <div style="margin-top:8px; display:flex; justify-content:center; gap:8px;">
+                    <button id="btn-reset-db" class="btn btn-outline btn-sm" title="إعادة تعيين قاعدة البيانات محلياً">إعادة تعيين القاعدة</button>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <!-- Header -->
+            <header class="main-header">
+                <div class="header-title">
+                    <h1 id="page-title">لوحة التحكم</h1>
+                    <p class="current-date" id="live-date">السبت، 23 مايو 2026</p>
+                </div>
+                <div class="header-actions">
+                    <div class="theme-toggle-btn" id="btn-theme-toggle" title="تغيير المظهر">
+                        <i data-lucide="sun" id="theme-icon" style="width:20px; height:20px;"></i>
+                    </div>
+                    <div class="notification-badge" id="low-stock-alert-badge" title="تنبيهات المخزون">
+                        <i data-lucide="bell"></i>
+                        <span class="badge-count" id="alert-count">0</span>
+                    </div>
+                    <div class="profile-section">
+                        <div class="avatar">ن</div>
+                        <span>مسؤول النظام</span>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Content Screens -->
+            <div class="content-wrapper">
+                
+                <!-- 1. DASHBOARD TAB -->
+                <section id="dashboard" class="tab-content active">
+                    <!-- Stats Cards -->
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-icon income-icon">
+                                <i data-lucide="trending-up"></i>
+                            </div>
+                            <div class="stat-details">
+                                <h3>إجمالي الإيرادات</h3>
+                                <p class="stat-value" id="dashboard-revenues">0.00 د.ع</p>
+                                <span class="stat-subtext">شامل المبيعات والصيانة</span>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon profit-icon">
+                                <i data-lucide="dollar-sign"></i>
+                            </div>
+                            <div class="stat-details">
+                                <h3>صافي الأرباح</h3>
+                                <p class="stat-value" id="dashboard-profits">0.00 د.ع</p>
+                                <span class="stat-subtext">بعد خصم التكلفة والمصاريف</span>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon repair-icon">
+                                <i data-lucide="wrench"></i>
+                            </div>
+                            <div class="stat-details">
+                                <h3>صيانة قيد الإصلاح</h3>
+                                <p class="stat-value" id="dashboard-repairs">0</p>
+                                <span class="stat-subtext">أجهزة جاري العمل عليها</span>
+                            </div>
+                        </div>
+                        <div class="stat-card alert-card">
+                            <div class="stat-icon warning-icon">
+                                <i data-lucide="alert-triangle"></i>
+                            </div>
+                            <div class="stat-details">
+                                <h3>مواد منخفضة الكمية</h3>
+                                <p class="stat-value" id="dashboard-low-stock">0</p>
+                                <span class="stat-subtext">تحتاج إلى إعادة طلب</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Charts / Recent Activities Grid -->
+                    <div class="grid-two-cols">
+                        <!-- Recent Sales -->
+                        <div class="content-card">
+                            <div class="card-header">
+                                <h2>آخر المبيعات</h2>
+                                <button class="btn btn-sm btn-outline" onclick="switchTab('pos')">فاتورة جديدة</button>
+                            </div>
+                            <div class="table-container">
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th>رقم الفاتورة</th>
+                                            <th>الزبون</th>
+                                            <th>التاريخ</th>
+                                            <th>الإجمالي</th>
+                                            <th>الإجراء</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="dashboard-recent-sales">
+                                        <!-- Dynamic rows -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- Maintenance Overview -->
+                        <div class="content-card">
+                            <div class="card-header">
+                                <h2>الأجهزة المستلمة حديثاً للصيانة</h2>
+                                <button class="btn btn-sm btn-outline" onclick="switchTab('maintenance')">تذكرة جديدة</button>
+                            </div>
+                            <div class="table-container">
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th>العميل</th>
+                                            <th>الجهاز</th>
+                                            <th>المشكلة</th>
+                                            <th>الحالة</th>
+                                            <th>التكلفة</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="dashboard-recent-repairs">
+                                        <!-- Dynamic rows -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 2. POS TAB -->
+                <section id="pos" class="tab-content">
+                    <div class="pos-layout">
+                        <!-- POS Left: Product Selection -->
+                        <div class="pos-products-panel">
+                            <div class="pos-search-bar">
+                                <div class="input-icon-group">
+                                    <i data-lucide="search"></i>
+                                    <input type="text" id="pos-search-input" placeholder="ابحث باسم المنتج أو الباركود...">
+                                </div>
+                                <select id="pos-category-filter" class="form-select">
+                                    <option value="all">كل التصنيفات</option>
+                                    <option value="phone">موبايلات</option>
+                                    <option value="accessory">اكسسوارات</option>
+                                    <option value="part">قطع صيانة</option>
+                                    <option value="print">استنساخ وطباعة</option>
+                                </select>
+                                </div>
+                            
+                            <!-- Quick Print & Copy Calculator -->
+                            <div class="content-card quick-print-card no-print" style="margin-top:16px; padding:16px; background:rgba(6,9,19,0.3); border:1px dashed var(--border-glass);">
+                                <div class="card-header" style="margin-bottom:12px; padding-bottom:8px; border-bottom:1px solid var(--border-glass);">
+                                    <h3 style="font-size:14px; font-weight:700; display:flex; align-items:center; gap:8px;">
+                                        <i data-lucide="printer" style="width:16px; height:16px; color:var(--color-secondary);"></i>
+                                        حاسبة الاستنساخ والطباعة السريعة
+                                    </h3>
+                                </div>
+                                <div class="grid-three-cols-form">
+                                    <div class="form-group" style="margin-bottom:8px;">
+                                        <label style="font-size:11px;">الخدمة</label>
+                                        <select id="print-calc-service" class="form-select" style="padding:6px 10px; min-width:auto; font-size:12px;">
+                                            <option value="copy">استنساخ (نسخ)</option>
+                                            <option value="print">طباعة مستندات</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group" style="margin-bottom:8px;">
+                                        <label style="font-size:11px;">النوع واللون</label>
+                                        <select id="print-calc-color" class="form-select" style="padding:6px 10px; min-width:auto; font-size:12px;">
+                                            <option value="bw_a4">أسود وأبيض - A4 (150 د.ع)</option>
+                                            <option value="color_a4">ملون عادي - A4 (500 د.ع)</option>
+                                            <option value="bw_a3">أسود وأبيض - A3 (300 د.ع)</option>
+                                            <option value="color_a3">ملون عادي - A3 (1,000 د.ع)</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group" style="margin-bottom:8px;">
+                                        <div class="grid-two-cols-form" style="gap:8px;">
+                                            <div>
+                                                <label style="font-size:11px;">عدد الصفحات</label>
+                                                <input type="number" id="print-calc-pages" class="form-input" value="1" min="1" style="padding:6px 10px; font-size:12px;">
+                                            </div>
+                                            <div>
+                                                <label style="font-size:11px;">النسخ</label>
+                                                <input type="number" id="print-calc-copies" class="form-input" value="1" min="1" style="padding:6px 10px; font-size:12px;">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="flex-row" style="justify-content:space-between; align-items:center; margin-top:8px;">
+                                    <span style="font-size:13px; font-weight:800; color:var(--color-secondary);">
+                                        الحساب المقدر: <span id="print-calc-total">150</span> د.ع
+                                    </span>
+                                    <button type="button" class="btn btn-primary btn-sm" id="btn-add-print-to-cart">
+                                        <i data-lucide="plus-circle" style="width:14px; height:14px;"></i> إضافة للسلة
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <div class="products-grid" id="pos-products-grid" style="margin-top:16px;">
+                                <!-- Products populated dynamically -->
+                            </div>
+                        </div>
+
+                        <!-- POS Right: Cart and Checkout -->
+                        <div class="pos-cart-panel">
+                            <div class="cart-header">
+                                <h2>سلة المبيعات</h2>
+                                <button class="btn btn-danger-link btn-sm" id="btn-clear-cart">
+                                    <i data-lucide="trash-2"></i> مسح السلة
+                                </button>
+                            </div>
+                            
+                            <!-- Customer Selection in POS -->
+                            <div class="cart-customer-selector">
+                                <label for="pos-customer-select">الزبون:</label>
+                                <div class="flex-row">
+                                    <select id="pos-customer-select" class="form-select flex-grow">
+                                        <option value="walk-in">زبون سفري (نقدي)</option>
+                                        <!-- Populated dynamically -->
+                                    </select>
+                                    <button class="btn btn-primary btn-square" id="btn-quick-add-customer" title="إضافة زبون سريع">
+                                        <i data-lucide="user-plus"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="cart-items" id="cart-items-list">
+                                <!-- Cart items populated dynamically -->
+                                <div class="empty-cart-message">
+                                    <i data-lucide="shopping-bag"></i>
+                                    <p>السلة فارغة. اختر منتجات للبيع</p>
+                                </div>
+                            </div>
+
+                            <div class="cart-summary">
+                                <div class="summary-row">
+                                    <span>إجمالي المواد</span>
+                                    <span id="cart-total-items">0</span>
+                                </div>
+                                <div class="summary-row total-row">
+                                    <span>المجموع الإجمالي</span>
+                                    <span id="cart-total-price">0 د.ع</span>
+                                </div>
+                                <div class="payment-method">
+                                    <label>طريقة الدفع:</label>
+                                    <div class="radio-group">
+                                        <label class="radio-label">
+                                            <input type="radio" name="payment-method" value="cash" checked>
+                                            <span>نقدي</span>
+                                        </label>
+                                        <label class="radio-label">
+                                            <input type="radio" name="payment-method" value="card">
+                                            <span>بطاقة دفع</span>
+                                        </label>
+                                    </div>
+                                </div>
+                                <button class="btn btn-primary btn-block btn-lg" id="btn-complete-sale">
+                                    <i data-lucide="check-circle"></i> إتمام عملية البيع وطباعة الفاتورة
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 3. INVENTORY TAB -->
+                <section id="inventory" class="tab-content">
+                    <div class="action-header">
+                        <div class="search-filters">
+                            <div class="input-icon-group">
+                                <i data-lucide="search"></i>
+                                <input type="text" id="inventory-search" placeholder="ابحث في المخزون...">
+                            </div>
+                            <select id="inventory-category-filter" class="form-select">
+                                <option value="all">كل التصنيفات</option>
+                                <option value="phone">موبايلات</option>
+                                <option value="accessory">اكسسوارات</option>
+                                <option value="part">قطع صيانة</option>
+                                <option value="print">استنساخ وطباعة</option>
+                            </select>
+                        </div>
+                        <button class="btn btn-primary" id="btn-add-product">
+                            <i data-lucide="plus"></i> إضافة منتج جديد
+                        </button>
+                    </div>
+
+                    <div class="content-card">
+                        <div class="table-container">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>الرمز/الباركود</th>
+                                        <th>المنتج</th>
+                                        <th>التصنيف</th>
+                                        <th>الكمية</th>
+                                        <th>سعر الشراء</th>
+                                        <th>سعر البيع</th>
+                                        <th>الـ IMEI (للهواتف)</th>
+                                        <th>الحالة</th>
+                                        <th>إجراءات</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="inventory-table-body">
+                                    <!-- Dynamic rows -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 4. MAINTENANCE TAB -->
+                <section id="maintenance" class="tab-content">
+                    <div class="action-header">
+                        <div class="search-filters">
+                            <div class="input-icon-group">
+                                <i data-lucide="search"></i>
+                                <input type="text" id="maintenance-search" placeholder="ابحث باسم الزبون أو الهاتف أو الرقم...">
+                            </div>
+                            <select id="maintenance-status-filter" class="form-select">
+                                <option value="all">كل الحالات</option>
+                                <option value="pending">قيد الإصلاح</option>
+                                <option value="ready">جاهز للتسليم</option>
+                                <option value="delivered">تم التسليم</option>
+                            </select>
+                        </div>
+                        <button class="btn btn-primary" id="btn-add-repair">
+                            <i data-lucide="plus"></i> تسجيل جهاز صيانة جديد
+                        </button>
+                    </div>
+
+                    <div class="content-card">
+                        <div class="table-container">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>رقم الإيصال</th>
+                                        <th>الزبون / الهاتف</th>
+                                        <th>نوع الجهاز</th>
+                                        <th>وصف العطل</th>
+                                        <th>تاريخ الاستلام</th>
+                                        <th>الحالة</th>
+                                        <th>التكلفة</th>
+                                        <th>الواصل</th>
+                                        <th>الباقي</th>
+                                        <th>إجراءات</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="maintenance-table-body">
+                                    <!-- Dynamic rows -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 5. CUSTOMERS TAB -->
+                <section id="customers" class="tab-content">
+                    <div class="action-header">
+                        <div class="search-filters">
+                            <div class="input-icon-group">
+                                <i data-lucide="search"></i>
+                                <input type="text" id="customers-search" placeholder="ابحث باسم الزبون أو الهاتف...">
+                            </div>
+                        </div>
+                        <button class="btn btn-primary" id="btn-add-customer">
+                            <i data-lucide="plus"></i> إضافة زبون جديد
+                        </button>
+                    </div>
+
+                    <div class="content-card">
+                        <div class="table-container">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>الاسم</th>
+                                        <th>رقم الهاتف</th>
+                                        <th>تاريخ التسجيل</th>
+                                        <th>عدد المشتريات</th>
+                                        <th>إجمالي المدفوعات</th>
+                                        <th>إجراءات</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="customers-table-body">
+                                    <!-- Dynamic rows -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 6. ACCOUNTING TAB -->
+                <section id="accounting" class="tab-content">
+                    <!-- Accounting Summary Cards -->
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-details">
+                                <h3>مبيعات المنتجات</h3>
+                                <p class="stat-value text-green" id="acc-sales-value">0.00 د.ع</p>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-details">
+                                <h3>إيرادات الصيانة</h3>
+                                <p class="stat-value text-blue" id="acc-repairs-value">0.00 د.ع</p>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-details">
+                                <h3>إيرادات الطباعة والاستنساخ</h3>
+                                <p class="stat-value text-purple" id="acc-print-value">0.00 د.ع</p>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-details">
+                                <h3>إجمالي المصاريف</h3>
+                                <p class="stat-value text-red" id="acc-expenses-value">0.00 د.ع</p>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-details">
+                                <h3>صافي الأرباح الكلية</h3>
+                                <p class="stat-value text-purple" id="acc-net-profit">0.00 د.ع</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Ledger / Expenses -->
+                    <div class="grid-two-cols mt-6">
+                        <!-- Add Custom Transaction -->
+                        <div class="content-card">
+                            <div class="card-header">
+                                <h2>تسجيل معاملة مالية (مصروف / إيراد إضافي)</h2>
+                            </div>
+                            <form id="accounting-form" class="accounting-form">
+                                <div class="form-group">
+                                    <label for="acc-type">نوع المعاملة</label>
+                                    <select id="acc-type" class="form-select" required>
+                                        <option value="expense">مصروف (سحب من الصندوق)</option>
+                                        <option value="revenue">إيراد إضافي (إيداع في الصندوق)</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="acc-amount">المبلغ (د.ع)</label>
+                                    <input type="number" id="acc-amount" class="form-input" required min="100" step="500">
+                                </div>
+                                <div class="form-group">
+                                    <label for="acc-description">البيان / الوصف</label>
+                                    <input type="text" id="acc-description" class="form-input" placeholder="مثال: فاتورة كهرباء، إيجار المحل، شراء مستلزمات..." required>
+                                </div>
+                                <button type="submit" class="btn btn-primary btn-block">
+                                    <i data-lucide="plus-circle"></i> تسجيل المعاملة
+                                </button>
+                            </form>
+                        </div>
+
+                        <!-- Financial Ledger -->
+                        <div class="content-card">
+                            <div class="card-header">
+                                <h2>دفتر الصندوق القياسي</h2>
+                                <button class="btn btn-sm btn-outline-danger" id="btn-clear-ledger">مسح السجل المالي</button>
+                            </div>
+                            <div class="table-container max-h-400">
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th>التاريخ</th>
+                                            <th>الوصف</th>
+                                            <th>النوع</th>
+                                            <th>المبلغ</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="accounting-ledger-body">
+                                        <!-- Dynamic rows -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+            </div>
+        </main>
+    </div>
+
+    <!-- ==================== MODALS ==================== -->
+    
+    <!-- 1. Product Modal (Add / Edit) -->
+    <div class="modal" id="product-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="product-modal-title">إضافة منتج جديد</h2>
+                <button class="close-modal" onclick="closeModal('product-modal')">&times;</button>
+            </div>
+            <form id="product-form">
+                <input type="hidden" id="edit-product-id">
+                <div class="form-group">
+                    <label for="product-name">اسم المنتج / الموديل</label>
+                    <input type="text" id="product-name" class="form-input" required>
+                </div>
+                <div class="grid-two-cols-form">
+                    <div class="form-group">
+                        <label for="product-category">التصنيف</label>
+                        <select id="product-category" class="form-select" onchange="toggleIMEIField()" required>
+                            <option value="phone">موبايل</option>
+                            <option value="accessory">اكسسوار</option>
+                            <option value="part">قطع صيانة</option>
+                            <option value="print">استنساخ وطباعة</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="product-barcode">الباركود / رمز التعريفي</label>
+                        <input type="text" id="product-barcode" class="form-input" placeholder="اختياري">
+                    </div>
+                </div>
+                <div class="grid-three-cols-form">
+                    <div class="form-group">
+                        <label for="product-qty">الكمية بالمخزن</label>
+                        <input type="number" id="product-qty" class="form-input" required min="0" value="1">
+                    </div>
+                    <div class="form-group">
+                        <label for="product-buy-price">سعر الشراء (د.ع)</label>
+                        <input type="number" id="product-buy-price" class="form-input" required min="0" step="500">
+                    </div>
+                    <div class="form-group">
+                        <label for="product-sell-price">سعر البيع (د.ع)</label>
+                        <input type="number" id="product-sell-price" class="form-input" required min="0" step="500">
+                    </div>
+                </div>
+                <!-- IMEI field for Mobile category -->
+                <div class="form-group" id="imei-field-wrapper">
+                    <label for="product-imeis">أرقام الـ IMEI (مفصولة بفاصلة)</label>
+                    <textarea id="product-imeis" class="form-input" rows="2" placeholder="أدخل IMEI لكل جهاز مع التقسيم بفواصل (على حسب الكمية)"></textarea>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline" onclick="closeModal('product-modal')">إلغاء</button>
+                    <button type="submit" class="btn btn-primary">حفظ المنتج</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 2. Maintenance Modal (Add / Edit) -->
+    <div class="modal" id="maintenance-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="maintenance-modal-title">تسجيل جهاز صيانة جديد</h2>
+                <button class="close-modal" onclick="closeModal('maintenance-modal')">&times;</button>
+            </div>
+            <form id="maintenance-form">
+                <input type="hidden" id="edit-repair-id">
+                <div class="grid-two-cols-form">
+                    <div class="form-group">
+                        <label for="repair-customer-select">الزبون</label>
+                        <select id="repair-customer-select" class="form-select" required>
+                            <!-- Populated dynamically -->
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="repair-device">نوع وموديل الجهاز</label>
+                        <input type="text" id="repair-device" class="form-input" placeholder="مثال: iPhone 13 Pro Max" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="repair-problem">وصف العطل / الخدمة المطلوبة</label>
+                    <textarea id="repair-problem" class="form-input" rows="2" placeholder="مثال: كسر شاشة، تبديل بطارية، مشكلة شحن..." required></textarea>
+                </div>
+                <div class="grid-three-cols-form">
+                    <div class="form-group">
+                        <label for="repair-cost">التكلفة الإجمالية للصيانة (د.ع)</label>
+                        <input type="number" id="repair-cost" class="form-input" required min="0" step="500">
+                    </div>
+                    <div class="form-group">
+                        <label for="repair-advance">المبلغ الواصل (المقدمة) (د.ع)</label>
+                        <input type="number" id="repair-advance" class="form-input" value="0" min="0" step="500">
+                    </div>
+                    <div class="form-group">
+                        <label for="repair-status">الحالة</label>
+                        <select id="repair-status" class="form-select">
+                            <option value="pending">قيد الإصلاح</option>
+                            <option value="ready">جاهز للتسليم</option>
+                            <option value="delivered">تم التسليم</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline" onclick="closeModal('maintenance-modal')">إلغاء</button>
+                    <button type="submit" class="btn btn-primary">حفظ الطلب</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 3. Customer Modal (Add / Edit) -->
+    <div class="modal" id="customer-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="customer-modal-title">إضافة زبون جديد</h2>
+                <button class="close-modal" onclick="closeModal('customer-modal')">&times;</button>
+            </div>
+            <form id="customer-form">
+                <input type="hidden" id="edit-customer-id">
+                <div class="form-group">
+                    <label for="customer-name">الاسم الكامل للزبون</label>
+                    <input type="text" id="customer-name" class="form-input" required>
+                </div>
+                <div class="form-group">
+                    <label for="customer-phone">رقم الهاتف</label>
+                    <input type="text" id="customer-phone" class="form-input" placeholder="07XXXXXXXXX" required>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline" onclick="closeModal('customer-modal')">إلغاء</button>
+                    <button type="submit" class="btn btn-primary">حفظ الزبون</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 4. Invoice / Bill Modal (Print simulation) -->
+    <div class="modal" id="invoice-modal">
+        <div class="modal-content invoice-modal-width">
+            <div class="modal-header no-print">
+                <h2>فاتورة مبيعات</h2>
+                <div>
+                    <button class="btn btn-primary" onclick="printInvoice()">
+                        <i data-lucide="printer"></i> طباعة الفاتورة
+                    </button>
+                    <button class="close-modal" onclick="closeModal('invoice-modal')">&times;</button>
+                </div>
+            </div>
+            <div class="invoice-container" id="invoice-print-area">
+                <div class="invoice-header">
+                    <div class="invoice-logo">
+                        <i data-lucide="smartphone" class="logo-large-icon"></i>
+                        <div>
+                            <h1>مكتب نوفا</h1>
+                            <p>للموبايلات والاكسسوارات</p>
+                        </div>
+                    </div>
+                    <div class="invoice-meta">
+                        <h2>فاتورة مبيعات مبسطة</h2>
+                        <p>رقم الفاتورة: <strong id="inv-number">INV-0000</strong></p>
+                        <p>التاريخ والوقت: <span id="inv-date">23/05/2026 18:00</span></p>
+                    </div>
+                </div>
+                
+                <hr class="invoice-divider">
+
+                <div class="invoice-customer-info">
+                    <p><strong>العميل:</strong> <span id="inv-customer-name">زبون سفري</span></p>
+                    <p><strong>الهاتف:</strong> <span id="inv-customer-phone">-</span></p>
+                    <p><strong>طريقة الدفع:</strong> <span id="inv-pay-method">نقدي</span></p>
+                </div>
+
+                <table class="invoice-table">
+                    <thead>
+                        <tr>
+                            <th>المنتج</th>
+                            <th>الكمية</th>
+                            <th>السعر المفرد</th>
+                            <th>الإجمالي</th>
+                        </tr>
+                    </thead>
+                    <tbody id="invoice-items-body">
+                        <!-- Dynamic items -->
+                    </tbody>
+                </table>
+
+                <div class="invoice-summary-section">
+                    <div class="invoice-summary-row">
+                        <span>المجموع:</span>
+                        <span id="inv-total-raw">0 د.ع</span>
+                    </div>
+                    <div class="invoice-summary-row grand-total">
+                        <span>المجموع الكلي:</span>
+                        <span id="inv-total-net">0 د.ع</span>
+                    </div>
+                </div>
+
+                <div class="invoice-footer">
+                    <p>شكراً لتعاملكم معنا! نتمنى زيارتكم مجدداً.</p>
+                    <p>مكتب نوفا للموبايلات والاكسسوارات - هاتف: 07800000000</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Application Logic -->
+    <script src="app.js"></script>
+</body>
+</html>
