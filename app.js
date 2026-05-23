@@ -115,6 +115,14 @@ function saveData(key, data) {
     localStorage.setItem(key, JSON.stringify(data));
 }
 
+if (typeof window !== 'undefined' && typeof window.lucide === 'undefined') {
+    window.lucide = {
+        createIcons: function() {
+            // Fallback for offline use when lucide library is not loaded.
+        }
+    };
+}
+
 // ==================== NAVIGATION & LIVE SYSTEM INFO ====================
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -136,20 +144,25 @@ document.addEventListener("DOMContentLoaded", () => {
     const themeIcon = document.getElementById("theme-icon");
     const savedTheme = localStorage.getItem("nova_theme") || "dark";
     
+    function updateThemeIcon(isLight) {
+        if (!themeIcon) return;
+        themeIcon.textContent = isLight ? "🌙" : "☀️";
+        themeIcon.setAttribute("data-lucide", isLight ? "moon" : "sun");
+    }
+    
     if (savedTheme === "light") {
         document.body.classList.add("light-theme");
-        themeIcon.setAttribute("data-lucide", "moon");
+        updateThemeIcon(true);
     } else {
         document.body.classList.remove("light-theme");
-        themeIcon.setAttribute("data-lucide", "sun");
+        updateThemeIcon(false);
     }
     
     btnTheme.addEventListener("click", () => {
         document.body.classList.toggle("light-theme");
         const isLight = document.body.classList.contains("light-theme");
         localStorage.setItem("nova_theme", isLight ? "light" : "dark");
-        themeIcon.setAttribute("data-lucide", isLight ? "moon" : "sun");
-        lucide.createIcons();
+        updateThemeIcon(isLight);
     });
 
     const mobileNavOverlay = document.getElementById("mobile-nav-overlay");

@@ -3,7 +3,7 @@
    Completely new design: Warm Gold + Deep Navy aesthetic
    ═══════════════════════════════════════════════════════════════ */
 
-@import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800;900&display=swap');
+/* Use system fonts when Google Fonts is unavailable for offline use */
 
 /* ── Dark Theme (Default) ────────────────────────────────────── */
 :root {
