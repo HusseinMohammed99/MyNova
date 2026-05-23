@@ -13,6 +13,8 @@ const defaultPrintPrices = {
     bw_a3: 300,
     color_a3: 1000
 };
+let syncQueue = [];
+let syncSettings = { endpoint: '' };
 // Ensure storage is internal/offline (using localStorage)
 const USE_LOCAL_DB = true; // true => localStorage only
 
@@ -52,6 +54,7 @@ function initData() {
     sales = JSON.parse(localStorage.getItem("nova_sales"));
     ledger = JSON.parse(localStorage.getItem("nova_ledger"));
     initPrintPrices();
+    initSync();
 }
 
 function initPrintPrices() {
@@ -84,7 +87,7 @@ function resetDatabase(force = false) {
     if (!force && !confirm("هل أنت متأكد من إعادة تعيين قاعدة البيانات المحلية؟ سيتم فقدان جميع البيانات المعدلة.")) return;
 
     // Remove known keys
-    const keys = ["nova_products", "nova_customers", "nova_maintenance", "nova_sales", "nova_ledger", "nova_print_prices", "nova_theme"];
+    const keys = ["nova_products", "nova_customers", "nova_maintenance", "nova_sales", "nova_ledger", "nova_print_prices", "nova_sync_queue", "nova_sync_settings", "nova_theme"];
     keys.forEach(k => localStorage.removeItem(k));
 
     // Clear in-memory arrays
@@ -113,6 +116,73 @@ function resetDatabase(force = false) {
 
 function saveData(key, data) {
     localStorage.setItem(key, JSON.stringify(data));
+}
+
+/* ================= SYNC (ONLINE/OFFLINE) ================= */
+function initSync() {
+    const q = JSON.parse(localStorage.getItem('nova_sync_queue') || '[]');
+    syncQueue = Array.isArray(q) ? q : [];
+    const s = JSON.parse(localStorage.getItem('nova_sync_settings') || '{}');
+    syncSettings = s && typeof s === 'object' ? s : { endpoint: '' };
+
+    updateNetworkUI();
+
+    if (navigator.onLine) processSyncQueue();
+
+    window.addEventListener('online', () => { updateNetworkUI(); processSyncQueue(); });
+    window.addEventListener('offline', () => { updateNetworkUI(); });
+    // expose a save button if exists
+    const saveBtn = document.getElementById('save-sync-settings');
+    if (saveBtn) saveBtn.addEventListener('click', () => {
+        const inp = document.getElementById('sync-endpoint');
+        if (inp) {
+            saveSyncSettings({ endpoint: inp.value.trim() });
+            alert('تم حفظ إعدادات المزامنة');
+        }
+    });
+    const inp = document.getElementById('sync-endpoint');
+    if (inp) inp.value = syncSettings.endpoint || '';
+}
+
+function updateNetworkUI() {
+    const indicator = document.getElementById('network-indicator');
+    const text = document.getElementById('network-text');
+    if (!indicator || !text) return;
+    if (navigator.onLine) { indicator.textContent = '🟢'; text.textContent = 'أونلاين'; }
+    else { indicator.textContent = '🔴'; text.textContent = 'أوفلاين'; }
+}
+
+function enqueueSync(item) {
+    item._queuedAt = new Date().toISOString();
+    item._id = item._id || ('q-' + Date.now() + '-' + Math.floor(Math.random()*1000));
+    syncQueue.push(item);
+    localStorage.setItem('nova_sync_queue', JSON.stringify(syncQueue));
+}
+
+async function processSyncQueue() {
+    if (!navigator.onLine) return;
+    if (!syncSettings.endpoint) return;
+    while (syncQueue.length > 0) {
+        const item = syncQueue[0];
+        try {
+            const res = await fetch(syncSettings.endpoint, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(item)
+            });
+            if (!res.ok) throw new Error('Status ' + res.status);
+            syncQueue.shift();
+            localStorage.setItem('nova_sync_queue', JSON.stringify(syncQueue));
+        } catch (e) {
+            console.warn('Sync failed, will retry later', e);
+            break;
+        }
+    }
+}
+
+function saveSyncSettings(obj) {
+    syncSettings = Object.assign({}, syncSettings, obj);
+    localStorage.setItem('nova_sync_settings', JSON.stringify(syncSettings));
 }
 
 if (typeof window !== 'undefined' && typeof window.lucide === 'undefined') {
@@ -164,6 +234,23 @@ document.addEventListener("DOMContentLoaded", () => {
         localStorage.setItem("nova_theme", isLight ? "light" : "dark");
         updateThemeIcon(isLight);
     });
+
+    // Design selector (professional / modern)
+    const designSelect = document.getElementById('design-select');
+    const savedDesign = localStorage.getItem('nova_design') || 'professional';
+    function applyDesign(design) {
+        document.body.classList.remove('design-modern');
+        if (design === 'modern') document.body.classList.add('design-modern');
+    }
+    applyDesign(savedDesign);
+    if (designSelect) {
+        designSelect.value = savedDesign;
+        designSelect.addEventListener('change', () => {
+            const d = designSelect.value;
+            localStorage.setItem('nova_design', d);
+            applyDesign(d);
+        });
+    }
 
     const mobileNavOverlay = document.getElementById("mobile-nav-overlay");
     const sidebarToggleBtn = document.getElementById("btn-sidebar-toggle");
@@ -820,6 +907,8 @@ function completeSale() {
     sales.push(newSale);
     saveData("nova_sales", sales);
     saveData("nova_products", products);
+    // enqueue for remote sync if configured
+    enqueueSync({ type: 'sale', action: 'create', payload: newSale });
 
     // Clear cart & Refresh GUI
     cart = [];
@@ -1153,6 +1242,8 @@ function handleMaintenanceForm(e) {
             date: new Date().toISOString().split("T")[0]
         };
         maintenance.push(newTicket);
+        // enqueue maintenance ticket for sync
+        enqueueSync({ type: 'maintenance', action: 'create', payload: newTicket });
     }
 
     saveData("nova_maintenance", maintenance);

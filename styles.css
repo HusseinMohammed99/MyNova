@@ -44,9 +44,124 @@
     --radius-xl: 28px;
     --radius-full: 9999px;
 
-    --font: 'Tajawal', sans-serif;
+    --font: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans Arabic", sans-serif;
     --transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
 }
+
+/* ── Professional Theme Tweaks ───────────────────────────────── */
+.main-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 20px;
+    background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01));
+    backdrop-filter: blur(6px);
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    box-shadow: 0 6px 20px rgba(2,6,23,0.5);
+    position: sticky;
+    top: 0;
+    z-index: 15;
+}
+
+.sidebar {
+    width: 260px;
+    padding: 18px 14px;
+    border-right: 1px solid rgba(255,255,255,0.03);
+}
+
+.sidebar .logo-text h2 { font-size: 18px; letter-spacing: 0.2px; }
+.sidebar .logo-text span { font-size: 12px; color: var(--text-secondary); }
+
+.menu-item { display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:10px; color:var(--text-primary); text-decoration:none; }
+.menu-item .icon { font-size:16px; }
+.menu-item.active { background: linear-gradient(90deg, rgba(245,158,11,0.08), rgba(245,158,11,0.02)); box-shadow: var(--shadow-sm); }
+
+.content-wrapper { padding: 20px; width:100%; }
+.content-card { background: linear-gradient(180deg, var(--bg-card), rgba(255,255,255,0.02)); border: 1px solid rgba(255,255,255,0.03); padding:16px; border-radius:12px; box-shadow: var(--shadow-sm); }
+
+.stats-grid { display:grid; grid-template-columns: repeat(4,1fr); gap:14px; }
+.stat-card { padding:16px; border-radius:12px; background: linear-gradient(180deg, rgba(255,255,255,0.02), transparent); }
+
+.btn { padding:8px 12px; border-radius:10px; cursor:pointer; border: none; font-weight:600; }
+.btn-outline { background:transparent; border:1px solid rgba(255,255,255,0.06); }
+.btn-primary { background: var(--accent); color: #051023; }
+.btn-sm { padding:6px 8px; font-size:13px; }
+
+.form-input, .form-select { background: var(--bg-input); border:1px solid var(--border-input); padding:8px 10px; border-radius:8px; color:var(--text-primary); }
+
+.products-grid { display:grid; grid-template-columns: repeat(auto-fill, minmax(220px,1fr)); gap:14px; }
+.product-item-card { background: linear-gradient(180deg, rgba(255,255,255,0.02), transparent); padding:12px; border-radius:12px; cursor:pointer; transition: transform .15s ease, box-shadow .15s ease; }
+.product-item-card:hover { transform: translateY(-6px); box-shadow: var(--shadow-md); }
+
+@media (max-width: 992px) {
+    .stats-grid { grid-template-columns: repeat(2,1fr); }
+    .sidebar { display:none; }
+    .app-container.sidebar-open .sidebar { display:block; position:fixed; left:0; top:0; height:100vh; z-index:30; }
+}
+
+/* small utilities */
+.text-muted { color: var(--text-secondary); }
+.font-bold { font-weight:700; }
+
+/* Network indicator tweaks */
+#network-indicator { font-weight:700; }
+#network-text { color: var(--text-secondary); }
+
+/* End of professional theme tweaks */
+
+/* ── Modern Light Design (alternate) ─────────────────────────── */
+body.design-modern {
+    --bg-body: #F8FAFF;
+    --bg-sidebar: #FFFFFF;
+    --bg-header: rgba(255,255,255,0.95);
+    --bg-card: #FFFFFF;
+    --bg-card-hover: #F1F5FF;
+    --bg-input: #FFFFFF;
+
+    --text-primary: #0B1220;
+    --text-secondary: #6B7280;
+
+    --accent: #2563EB; /* blue */
+    --accent-glow: rgba(37,99,235,0.12);
+    --accent-soft: rgba(37,99,235,0.06);
+    --accent-dark: #1D4ED8;
+
+    --border: rgba(2,6,23,0.06);
+    --border-input: rgba(15,23,42,0.06);
+
+    --shadow-sm: 0 6px 18px rgba(16,24,40,0.06);
+    --shadow-md: 0 12px 40px rgba(16,24,40,0.08);
+}
+
+body.design-modern .main-header {
+    background: linear-gradient(180deg, #FFFFFF, #FBFDFF);
+    border-bottom: 1px solid rgba(15,23,42,0.04);
+    box-shadow: 0 6px 18px rgba(16,24,40,0.04);
+}
+
+body.design-modern .sidebar {
+    background: var(--bg-sidebar);
+    border-right: 1px solid rgba(15,23,42,0.04);
+}
+
+body.design-modern .content-card {
+    background: var(--bg-card);
+    border: 1px solid rgba(15,23,42,0.04);
+}
+
+body.design-modern .menu-item { color: var(--text-primary); }
+body.design-modern .menu-item.active { background: var(--accent-soft); box-shadow: none; }
+
+body.design-modern .btn-outline { border-color: rgba(15,23,42,0.06); }
+body.design-modern .btn-primary { background: var(--accent); color: #fff; }
+
+body.design-modern .product-item-card { background: linear-gradient(180deg, #fff, #fbfcff); border: 1px solid rgba(15,23,42,0.04); }
+
+@media (max-width: 992px) {
+    body.design-modern .sidebar { display:none; }
+}
+
+/* End Modern Light Design */
 
 /* ── Light Theme ─────────────────────────────────────────────── */
 body.light-theme {
