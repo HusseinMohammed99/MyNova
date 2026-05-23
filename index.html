@@ -4,12 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>مكتب نوفا للموبايلات والاكسسوارات - نظام الإدارة</title>
-    <!-- Google Fonts - Tajawal -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800;900&display=swap" rel="stylesheet">
-    <!-- Lucide Icons -->
-    <script src="https://unpkg.com/lucide@latest"></script>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -18,7 +12,7 @@
         <aside class="sidebar">
             <div class="sidebar-header">
                 <div class="logo-icon">
-                    <i data-lucide="smartphone"></i>
+                    <span class="icon">📱</span>
                 </div>
                 <div class="logo-text">
                     <h2>مكتب نوفا</h2>
@@ -28,27 +22,27 @@
             
             <nav class="sidebar-menu">
                 <a href="#" class="menu-item active" data-tab="dashboard">
-                    <i data-lucide="layout-dashboard"></i>
+                    <span class="icon">📊</span>
                     <span>لوحة التحكم</span>
                 </a>
                 <a href="#" class="menu-item" data-tab="pos">
-                    <i data-lucide="shopping-cart"></i>
+                    <span class="icon">🛒</span>
                     <span>نقطة البيع (POS)</span>
                 </a>
                 <a href="#" class="menu-item" data-tab="inventory">
-                    <i data-lucide="package"></i>
+                    <span class="icon">📦</span>
                     <span>إدارة المخزون</span>
                 </a>
                 <a href="#" class="menu-item" data-tab="maintenance">
-                    <i data-lucide="wrench"></i>
+                    <span class="icon">🔧</span>
                     <span>قسم الصيانة</span>
                 </a>
                 <a href="#" class="menu-item" data-tab="customers">
-                    <i data-lucide="users"></i>
+                    <span class="icon">👥</span>
                     <span>إدارة الزبائن</span>
                 </a>
                 <a href="#" class="menu-item" data-tab="accounting">
-                    <i data-lucide="wallet"></i>
+                    <span class="icon">💼</span>
                     <span>المحاسبة والتقارير</span>
                 </a>
             </nav>
@@ -67,7 +61,7 @@
             <!-- Header -->
             <header class="main-header">
                 <button class="sidebar-toggle-btn" id="btn-sidebar-toggle" aria-label="فتح القائمة">
-                    <i data-lucide="menu" style="width:20px; height:20px;"></i>
+                    <span class="icon" style="font-size:20px;">☰</span>
                 </button>
                 <div class="header-title">
                     <h1 id="page-title">لوحة التحكم</h1>
@@ -75,10 +69,10 @@
                 </div>
                 <div class="header-actions">
                     <div class="theme-toggle-btn" id="btn-theme-toggle" title="تغيير المظهر">
-                        <i data-lucide="sun" id="theme-icon" style="width:20px; height:20px;"></i>
+                        <span class="icon" id="theme-icon" style="font-size:20px;">☀️</span>
                     </div>
                     <div class="notification-badge" id="low-stock-alert-badge" title="تنبيهات المخزون">
-                        <i data-lucide="bell"></i>
+                        <span class="icon">🔔</span>
                         <span class="badge-count" id="alert-count">0</span>
                     </div>
                     <div class="profile-section">
@@ -215,6 +209,27 @@
                                         <i data-lucide="printer" style="width:16px; height:16px; color:var(--color-secondary);"></i>
                                         حاسبة الاستنساخ والطباعة السريعة
                                     </h3>
+                                </div>
+                                <div class="form-group" style="margin-bottom:12px; padding:10px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:12px;">
+                                    <h4 style="font-size:12px; margin-bottom:10px;">إعدادات أسعار الطباعة والاستنساخ</h4>
+                                    <div class="grid-two-cols-form" style="gap:8px;">
+                                        <div>
+                                            <label style="font-size:11px;">A4 أبيض وأسود</label>
+                                            <input type="number" id="print-price-bw-a4" class="form-input" value="150" min="0" style="padding:6px 10px; font-size:12px;">
+                                        </div>
+                                        <div>
+                                            <label style="font-size:11px;">A4 ملون</label>
+                                            <input type="number" id="print-price-color-a4" class="form-input" value="500" min="0" style="padding:6px 10px; font-size:12px;">
+                                        </div>
+                                        <div>
+                                            <label style="font-size:11px;">A3 أبيض وأسود</label>
+                                            <input type="number" id="print-price-bw-a3" class="form-input" value="300" min="0" style="padding:6px 10px; font-size:12px;">
+                                        </div>
+                                        <div>
+                                            <label style="font-size:11px;">A3 ملون</label>
+                                            <input type="number" id="print-price-color-a3" class="form-input" value="1000" min="0" style="padding:6px 10px; font-size:12px;">
+                                        </div>
+                                    </div>
                                 </div>
                                 <div class="grid-three-cols-form">
                                     <div class="form-group" style="margin-bottom:8px;">

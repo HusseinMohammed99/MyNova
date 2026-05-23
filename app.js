@@ -6,6 +6,13 @@ let maintenance = [];
 let customers = [];
 let ledger = [];
 let cart = [];
+let printPrices = {};
+const defaultPrintPrices = {
+    bw_a4: 150,
+    color_a4: 500,
+    bw_a3: 300,
+    color_a3: 1000
+};
 // Ensure storage is internal/offline (using localStorage)
 const USE_LOCAL_DB = true; // true => localStorage only
 
@@ -36,6 +43,7 @@ function initData() {
         localStorage.setItem("nova_maintenance", JSON.stringify(mockMaintenance));
         localStorage.setItem("nova_sales", JSON.stringify(mockSales));
         localStorage.setItem("nova_ledger", JSON.stringify(mockLedger));
+        localStorage.setItem("nova_print_prices", JSON.stringify(defaultPrintPrices));
     }
     
     products = JSON.parse(localStorage.getItem("nova_products"));
@@ -43,6 +51,32 @@ function initData() {
     maintenance = JSON.parse(localStorage.getItem("nova_maintenance"));
     sales = JSON.parse(localStorage.getItem("nova_sales"));
     ledger = JSON.parse(localStorage.getItem("nova_ledger"));
+    initPrintPrices();
+}
+
+function initPrintPrices() {
+    const stored = JSON.parse(localStorage.getItem("nova_print_prices"));
+    if (stored && typeof stored === "object") {
+        printPrices = {
+            bw_a4: stored.bw_a4 || defaultPrintPrices.bw_a4,
+            color_a4: stored.color_a4 || defaultPrintPrices.color_a4,
+            bw_a3: stored.bw_a3 || defaultPrintPrices.bw_a3,
+            color_a3: stored.color_a3 || defaultPrintPrices.color_a3
+        };
+    } else {
+        printPrices = { ...defaultPrintPrices };
+    }
+    saveData("nova_print_prices", printPrices);
+}
+
+function getPrintPrice(type) {
+    return printPrices[type] || defaultPrintPrices[type] || 0;
+}
+
+function setPrintPrice(type, value) {
+    if (!defaultPrintPrices.hasOwnProperty(type)) return;
+    printPrices[type] = Number(value) || defaultPrintPrices[type];
+    saveData("nova_print_prices", printPrices);
 }
 
 // Reset local database to mock/default state
@@ -50,7 +84,7 @@ function resetDatabase(force = false) {
     if (!force && !confirm("هل أنت متأكد من إعادة تعيين قاعدة البيانات المحلية؟ سيتم فقدان جميع البيانات المعدلة.")) return;
 
     // Remove known keys
-    const keys = ["nova_products", "nova_customers", "nova_maintenance", "nova_sales", "nova_ledger", "nova_theme"];
+    const keys = ["nova_products", "nova_customers", "nova_maintenance", "nova_sales", "nova_ledger", "nova_print_prices", "nova_theme"];
     keys.forEach(k => localStorage.removeItem(k));
 
     // Clear in-memory arrays
@@ -156,14 +190,21 @@ document.addEventListener("DOMContentLoaded", () => {
         const copies = parseInt(calcCopies.value) || 1;
         
         let pricePerPage = 150;
-        if (colorVal === "bw_a4") pricePerPage = 150;
-        else if (colorVal === "color_a4") pricePerPage = 500;
-        else if (colorVal === "bw_a3") pricePerPage = 300;
-        else if (colorVal === "color_a3") pricePerPage = 1000;
+        if (colorVal === "bw_a4") pricePerPage = getPrintPrice("bw_a4");
+        else if (colorVal === "color_a4") pricePerPage = getPrintPrice("color_a4");
+        else if (colorVal === "bw_a3") pricePerPage = getPrintPrice("bw_a3");
+        else if (colorVal === "color_a3") pricePerPage = getPrintPrice("color_a3");
         
         const total = pricePerPage * pages * copies;
         calcTotalSpan.innerText = total.toLocaleString('en-US');
     }
+
+    const priceInputs = {
+        bw_a4: document.getElementById("print-price-bw-a4"),
+        color_a4: document.getElementById("print-price-color-a4"),
+        bw_a3: document.getElementById("print-price-bw-a3"),
+        color_a3: document.getElementById("print-price-color-a3")
+    };
 
     if(calcService && calcColor && calcPages && calcCopies) {
         [calcService, calcColor, calcPages, calcCopies].forEach(el => {
@@ -171,6 +212,31 @@ document.addEventListener("DOMContentLoaded", () => {
             el.addEventListener("change", updatePrintCalculator);
         });
     }
+
+    Object.entries(priceInputs).forEach(([type, input]) => {
+        if (!input) return;
+        input.value = getPrintPrice(type);
+        input.addEventListener("change", () => {
+            setPrintPrice(type, input.value);
+            updateColorLabels();
+            updatePrintCalculator();
+        });
+    });
+
+    function updateColorLabels() {
+        const labels = {
+            bw_a4: `أسود وأبيض - A4 (${getPrintPrice("bw_a4").toLocaleString()} د.ع)`,
+            color_a4: `ملون عادي - A4 (${getPrintPrice("color_a4").toLocaleString()} د.ع)`,
+            bw_a3: `أسود وأبيض - A3 (${getPrintPrice("bw_a3").toLocaleString()} د.ع)`,
+            color_a3: `ملون عادي - A3 (${getPrintPrice("color_a3").toLocaleString()} د.ع)`
+        };
+        if (calcColor) {
+            Array.from(calcColor.options).forEach(opt => {
+                if (labels[opt.value]) opt.textContent = labels[opt.value];
+            });
+        }
+    }
+    updateColorLabels();
 
     if(btnAddPrint) {
         btnAddPrint.addEventListener("click", () => {
@@ -182,10 +248,10 @@ document.addEventListener("DOMContentLoaded", () => {
             const colorVal = calcColor.value;
             let pricePerPage = 150;
             let costPerPage = 50;
-            if (colorVal === "bw_a4") { pricePerPage = 150; costPerPage = 50; }
-            else if (colorVal === "color_a4") { pricePerPage = 500; costPerPage = 200; }
-            else if (colorVal === "bw_a3") { pricePerPage = 300; costPerPage = 100; }
-            else if (colorVal === "color_a3") { pricePerPage = 1000; costPerPage = 400; }
+            if (colorVal === "bw_a4") { pricePerPage = getPrintPrice("bw_a4"); costPerPage = 50; }
+            else if (colorVal === "color_a4") { pricePerPage = getPrintPrice("color_a4"); costPerPage = 200; }
+            else if (colorVal === "bw_a3") { pricePerPage = getPrintPrice("bw_a3"); costPerPage = 100; }
+            else if (colorVal === "color_a3") { pricePerPage = getPrintPrice("color_a3"); costPerPage = 400; }
             
             const totalPrice = pricePerPage * pages * copies;
             const totalCost = costPerPage * pages * copies;
@@ -220,10 +286,10 @@ if (btnAddCopyDirect) {
         const colorVal = calcColor.value;
         let pricePerPage = 150;
         let costPerPage = 50;
-        if (colorVal === "bw_a4") { pricePerPage = 150; costPerPage = 50; }
-        else if (colorVal === "color_a4") { pricePerPage = 500; costPerPage = 200; }
-        else if (colorVal === "bw_a3") { pricePerPage = 300; costPerPage = 100; }
-        else if (colorVal === "color_a3") { pricePerPage = 1000; costPerPage = 400; }
+        if (colorVal === "bw_a4") { pricePerPage = getPrintPrice("bw_a4"); costPerPage = 50; }
+        else if (colorVal === "color_a4") { pricePerPage = getPrintPrice("color_a4"); costPerPage = 200; }
+        else if (colorVal === "bw_a3") { pricePerPage = getPrintPrice("bw_a3"); costPerPage = 100; }
+        else if (colorVal === "color_a3") { pricePerPage = getPrintPrice("color_a3"); costPerPage = 400; }
         const totalPrice = pricePerPage * pages * copies;
         const totalCost = costPerPage * pages * copies;
         // Add service directly to cart
