@@ -4,7 +4,213 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>مكتب نوفا للموبايلات والاكسسوارات - نظام الإدارة</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
+    <style>
+        :root {
+            /* الأساسيات */
+            --font-main: 'Cairo', sans-serif;
+            --primary-gradient: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+            --accent-color: #f43f5e;
+            
+            /* متغيرات الوضع المظلم (الافتراضي) */
+            --bg-body: #0B0F1A;
+            --bg-body-gradient: radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.15) 0, transparent 50%), 
+                                radial-gradient(at 100% 100%, rgba(168, 85, 247, 0.15) 0, transparent 50%);
+            --glass-bg: rgba(255, 255, 255, 0.03);
+            --glass-border: rgba(255, 255, 255, 0.08);
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --bg-card: rgba(17, 24, 48, 0.6);
+            --bg-sidebar: #0E1225;
+            --bg-header: rgba(14, 18, 37, 0.85);
+            --card-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+        }
+
+        body.light-theme {
+            /* متغيرات الوضع الفاتح */
+            --bg-body: #f8faff;
+            --bg-body-gradient: radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.08) 0, transparent 50%), 
+                                radial-gradient(at 100% 100%, rgba(168, 85, 247, 0.08) 0, transparent 50%);
+            --glass-bg: rgba(255, 255, 255, 0.7);
+            --glass-border: rgba(99, 102, 241, 0.15);
+            --text-primary: #1e293b;
+            --text-secondary: #64748b;
+            --bg-card: #FFFFFF;
+            --bg-sidebar: #FFFFFF;
+            --bg-header: rgba(255, 255, 255, 0.85);
+            --card-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.05);
+        }
+
+        body {
+            font-family: var(--font-main);
+            background: var(--bg-body);
+            background-image: var(--bg-body-gradient);
+            color: var(--text-primary);
+            margin: 0;
+            overflow-x: hidden;
+            transition: background 0.5s ease, color 0.3s ease;
+        }
+
+        /* Sidebar Glass Effect */
+        .sidebar {
+            background: var(--bg-sidebar) !important;
+            backdrop-filter: blur(12px);
+            border-left: 1px solid var(--glass-border) !important;
+        }
+
+        .menu-item {
+            border-radius: 12px;
+            margin: 4px 12px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            color: var(--text-secondary) !important;
+        }
+
+        .menu-item:hover, .menu-item.active {
+            background: var(--primary-gradient) !important;
+            color: white !important;
+            transform: translateX(-5px);
+            box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4);
+        }
+
+        /* Stats Cards Enhancements */
+        .stat-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(8px);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            padding: 24px;
+            transition: transform 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-10px);
+            border-color: rgba(168, 85, 247, 0.4);
+        }
+
+        .stat-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--primary-gradient);
+        }
+
+        /* Modern Buttons */
+        .btn-primary {
+            background: var(--primary-gradient) !important;
+            border: none !important;
+            border-radius: 12px !important;
+            font-weight: 700 !important;
+            letter-spacing: 0.5px;
+            box-shadow: 0 4px 14px 0 rgba(99, 102, 241, 0.39);
+        }
+
+        .btn-primary:hover {
+            transform: scale(1.02);
+            box-shadow: 0 6px 20px rgba(99, 102, 241, 0.23);
+        }
+
+        /* Product Cards POS */
+        .product-item-card {
+            background: var(--card-bg) !important;
+            border: 1px solid var(--glass-border) !important;
+            border-radius: 18px !important;
+            transition: all 0.3s ease !important;
+        }
+
+        .product-item-card:hover {
+            background: var(--card-bg) !important;
+            border-color: #6366f1 !important;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+        }
+
+        .product-card-price {
+            color: #818cf8 !important;
+            font-weight: 800;
+            font-size: 1.1rem;
+        }
+
+        /* Tables Glass Design */
+        .content-card {
+            background: var(--bg-card) !important;
+            border: 1px solid var(--glass-border) !important;
+            border-radius: 24px;
+            overflow: hidden;
+        }
+
+        table thead {
+            background: var(--bg-header) !important;
+        }
+
+        table th {
+            color: var(--text-secondary) !important;
+            text-transform: uppercase;
+            font-size: 11px;
+            letter-spacing: 1px;
+            padding: 16px;
+        }
+
+        table td {
+            padding: 16px;
+            border-bottom: 1px solid var(--glass-border);
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0f172a;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #475569;
+        }
+
+        /* POS Cart Panel */
+        .pos-cart-panel {
+            background: rgba(15, 23, 42, 0.6) !important;
+            border-right: 1px solid var(--glass-border) !important;
+        }
+
+        .cart-item {
+            background: rgba(255,255,255,0.03);
+            border-radius: 14px;
+            margin-bottom: 8px;
+            border: 1px solid transparent;
+        }
+
+        .cart-item:hover {
+            border-color: var(--glass-border);
+            background: rgba(255,255,255,0.05);
+        }
+
+        /* Badges */
+        .badge {
+            border-radius: 8px !important;
+            padding: 4px 12px !important;
+            font-weight: 600 !important;
+            font-size: 11px !important;
+        }
+
+        .badge-success { background: rgba(16, 185, 129, 0.1) !important; color: #10b981 !important; }
+        .badge-warning { background: rgba(245, 158, 11, 0.1) !important; color: #f59e0b !important; }
+        .badge-danger { background: rgba(239, 68, 68, 0.1) !important; color: #ef4444 !important; }
+
+        /* Header Profile */
+        .avatar {
+            background: var(--primary-gradient) !important;
+            font-weight: 800;
+        }
+    </style>
 </head>
 <body>
     <div class="app-container">
@@ -71,21 +277,17 @@
                     <div class="theme-toggle-btn" id="btn-theme-toggle" title="تغيير المظهر">
                         <span class="icon" id="theme-icon" style="font-size:20px;">☀️</span>
                     </div>
-                    <div style="margin-left:8px; display:flex; align-items:center; gap:8px;">
+                    <!-- <div style="margin-left:8px; display:flex; align-items:center; gap:8px;">
                         <label for="design-select" style="font-size:12px; color:var(--text-secondary);">تصميم</label>
                         <select id="design-select" style="padding:6px 8px; border-radius:8px; background:var(--bg-input); border:1px solid var(--border-input); color:var(--text-primary);">
                             <option value="professional">احترافي</option>
                             <option value="modern">حديث فاتح</option>
                         </select>
-                    </div>
+                    </div> -->
                     <div class="notification-badge" id="low-stock-alert-badge" title="تنبيهات المخزون">
                         <span class="icon">🔔</span>
                         <span class="badge-count" id="alert-count">0</span>
                     </div>
-                        <div class="network-status" id="network-status" title="حالة الشبكة" style="margin-left:12px; display:flex; align-items:center; gap:6px;">
-                            <span id="network-indicator" style="font-size:16px;">🔌</span>
-                            <span id="network-text" style="font-size:13px;">تحقق...</span>
-                        </div>
                     <div class="profile-section">
                         <div class="avatar">ن</div>
                         <span>مسؤول النظام</span>
@@ -214,13 +416,17 @@
                                 </div>
                             
                             <!-- Quick Print & Copy Calculator -->
-                            <div class="content-card quick-print-card no-print" style="margin-top:16px; padding:16px; background:rgba(6,9,19,0.3); border:1px dashed var(--border-glass);">
-                                <div class="card-header" style="margin-bottom:12px; padding-bottom:8px; border-bottom:1px solid var(--border-glass);">
+                            <div class="content-card quick-print-card no-print" id="quick-print-calculator" style="margin-top:16px; padding:16px; background:rgba(6,9,19,0.3); border:1px dashed var(--border-glass);">
+                                <div class="card-header" style="padding-bottom:8px; border-bottom:1px solid var(--border-glass); display: flex; justify-content: space-between; align-items: center;">
                                     <h3 style="font-size:14px; font-weight:700; display:flex; align-items:center; gap:8px;">
                                         <i data-lucide="printer" style="width:16px; height:16px; color:var(--color-secondary);"></i>
                                         حاسبة الاستنساخ والطباعة السريعة
                                     </h3>
+                                    <button class="btn btn-sm btn-outline" id="toggle-print-calc-btn" title="إظهار/إخفاء الحاسبة">
+                                        <i data-lucide="chevron-up"></i>
+                                    </button>
                                 </div>
+                                <div id="quick-print-body" style="margin-top:12px;">
                                 <div class="form-group" style="margin-bottom:12px; padding:10px; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:12px;">
                                     <h4 style="font-size:12px; margin-bottom:10px;">إعدادات أسعار الطباعة والاستنساخ</h4>
                                     <div class="grid-two-cols-form" style="gap:8px;">
@@ -241,10 +447,6 @@
                                             <input type="number" id="print-price-color-a3" class="form-input" value="1000" min="0" style="padding:6px 10px; font-size:12px;">
                                         </div>
                                     </div>
-                                </div>
-                                <div style="margin-top:10px; padding:10px; border-top:1px dashed rgba(255,255,255,0.04); display:flex; gap:8px; align-items:center;">
-                                    <input type="text" id="sync-endpoint" placeholder="نقطة المزامنة (URL) - اختياري" style="flex:1; padding:6px 10px; font-size:12px;">
-                                    <button id="save-sync-settings" class="btn btn-sm btn-outline">حفظ المزامنة</button>
                                 </div>
                                 <div class="grid-three-cols-form">
                                     <div class="form-group" style="margin-bottom:8px;">
@@ -283,6 +485,7 @@
                                     <button type="button" class="btn btn-primary btn-sm" id="btn-add-print-to-cart">
                                         <i data-lucide="plus-circle" style="width:14px; height:14px;"></i> إضافة للسلة
                                     </button>
+                                </div>
                                 </div>
                             </div>
                             
@@ -327,9 +530,32 @@
                                     <span>إجمالي المواد</span>
                                     <span id="cart-total-items">0</span>
                                 </div>
+                                <div class="summary-row">
+                                    <span>المجموع قبل الخصم</span>
+                                    <span id="cart-subtotal-price">0 د.ع</span>
+                                </div>
+                                <div class="summary-row">
+                                    <span>الخصم</span>
+                                    <span id="cart-discount-amount">0 د.ع</span>
+                                </div>
                                 <div class="summary-row total-row">
-                                    <span>المجموع الإجمالي</span>
+                                    <span>المجموع النهائي</span>
                                     <span id="cart-total-price">0 د.ع</span>
+                                </div>
+                                <div class="form-group" style="margin-top:12px;">
+                                    <label for="discount-type" style="font-size:12px; margin-bottom:6px; display:block;">نوع الخصم</label>
+                                    <div class="flex-row" style="gap:8px;">
+                                        <select id="discount-type" class="form-select flex-grow">
+                                            <option value="none">بدون خصم</option>
+                                            <option value="percent">خصم بنسبة %</option>
+                                            <option value="amount">خصم بمبلغ ثابت</option>
+                                        </select>
+                                        <button type="button" class="btn btn-outline btn-sm" id="btn-clear-discount">مسح</button>
+                                    </div>
+                                </div>
+                                <div class="form-group" style="margin-top:8px;">
+                                    <label for="discount-value" style="font-size:12px; margin-bottom:6px; display:block;">قيمة الخصم</label>
+                                    <input type="number" id="discount-value" class="form-input" min="0" step="1" placeholder="مثال: 10" disabled>
                                 </div>
                                 <div class="payment-method">
                                     <label>طريقة الدفع:</label>
@@ -368,10 +594,19 @@
                                 <option value="print">استنساخ وطباعة</option>
                             </select>
                         </div>
-                        <button class="btn btn-primary" id="btn-add-product">
-                            <i data-lucide="plus"></i> إضافة منتج جديد
-                        </button>
+                        <div class="flex-row" style="gap:8px; flex-wrap:wrap; justify-content:flex-end;">
+                            <input type="file" id="inventory-file-input" accept="*/*" multiple hidden>
+                            <button type="button" class="btn btn-outline" id="btn-import-products">
+                                <i data-lucide="upload"></i> استيراد الملفات
+                            </button>
+                            <button class="btn btn-primary" id="btn-add-product">
+                                <i data-lucide="plus"></i> إضافة منتج جديد
+                            </button>
+                        </div>
                     </div>
+                    <p id="inventory-import-status" class="text-muted" style="margin-top:10px; font-size:12px;">
+                        يمكنك استيراد ملفات CSV وJSON وExcel أو أي ملف منظم من الجدول.
+                    </p>
 
                     <div class="content-card">
                         <div class="table-container">
@@ -710,6 +945,9 @@
             <div class="modal-header no-print">
                 <h2>فاتورة مبيعات</h2>
                 <div>
+                    <button class="btn btn-secondary" id="btn-return-sale" style="margin-right:8px; display:none;" onclick="returnSale(currentInvoiceSaleId)">
+                        <i data-lucide="rotate-ccw"></i> إرجاع الفاتورة
+                    </button>
                     <button class="btn btn-primary" onclick="printInvoice()">
                         <i data-lucide="printer"></i> طباعة الفاتورة
                     </button>
@@ -756,8 +994,12 @@
 
                 <div class="invoice-summary-section">
                     <div class="invoice-summary-row">
-                        <span>المجموع:</span>
+                        <span>المجموع قبل الخصم:</span>
                         <span id="inv-total-raw">0 د.ع</span>
+                    </div>
+                    <div class="invoice-summary-row">
+                        <span>الخصم:</span>
+                        <span id="inv-discount-amount">0 د.ع</span>
                     </div>
                     <div class="invoice-summary-row grand-total">
                         <span>المجموع الكلي:</span>
@@ -772,6 +1014,8 @@
             </div>
         </div>
     </div>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
     <!-- Application Logic -->
     <script src="app.js"></script>
 </body>

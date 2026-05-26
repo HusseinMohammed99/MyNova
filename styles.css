@@ -54,10 +54,10 @@
     align-items: center;
     justify-content: space-between;
     padding: 14px 20px;
-    background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01));
-    backdrop-filter: blur(6px);
-    border-bottom: 1px solid rgba(255,255,255,0.04);
-    box-shadow: 0 6px 20px rgba(2,6,23,0.5);
+    background: var(--bg-header) !important;
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--glass-border) !important;
+    box-shadow: var(--card-shadow) !important;
     position: sticky;
     top: 0;
     z-index: 15;
@@ -66,7 +66,7 @@
 .sidebar {
     width: 260px;
     padding: 18px 14px;
-    border-right: 1px solid rgba(255,255,255,0.03);
+    border-right: 1px solid var(--glass-border) !important;
 }
 
 .sidebar .logo-text h2 { font-size: 18px; letter-spacing: 0.2px; }
@@ -190,6 +190,27 @@ body.light-theme {
     --shadow-md: 0 8px 24px rgba(0,0,0,0.08);
     --shadow-lg: 0 16px 48px rgba(0,0,0,0.1);
     --shadow-glow: 0 0 20px var(--accent-glow);
+}
+
+/* إزالة اللون الرمادي من سلة البيع في وضع النهار وجعلها بيضاء نقية ومشرقة */
+body.light-theme .pos-cart-panel { 
+    background-color: #ffffff !important; 
+    border-color: #e2e8f0; 
+    box-shadow: var(--shadow-lg);
+    backdrop-filter: none !important;
+}
+body.light-theme .cart-header,
+body.light-theme .cart-items,
+body.light-theme .cart-summary { background-color: #ffffff !important; }
+body.light-theme .cart-header { border-bottom: 1px solid #f1f5f9; }
+body.light-theme .cart-customer-selector { border-bottom: 1px solid #f1f5f9; background-color: #ffffff !important; }
+body.light-theme .cart-customer-selector .form-select { background-color: #ffffff; border: 1px solid rgba(0,0,0,0.1); }
+body.light-theme .cart-summary { border-top: 2px solid var(--accent-soft); box-shadow: 0 -4px 12px rgba(0,0,0,0.03); }
+body.light-theme .cart-item { background-color: #ffffff; border-radius: var(--radius-sm); margin-bottom: 8px; padding: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.04); border: 1px solid #f8fafc; }
+body.light-theme .cart-qty-input,
+body.light-theme .cart-item-imei-select {
+    background-color: #ffffff;
+    border: 1px solid rgba(0,0,0,0.05);
 }
 
 /* ── Reset & Base ────────────────────────────────────────────── */
@@ -1116,11 +1137,12 @@ textarea.form-input {
     padding: 0;
     display: flex;
     flex-direction: column;
-    max-height: calc(100vh - 160px);
+    height: fit-content;
+    max-height: none;
     position: sticky;
     top: 112px;
     backdrop-filter: blur(20px);
-    overflow: hidden;
+    overflow: visible;
 }
 
 .cart-header {

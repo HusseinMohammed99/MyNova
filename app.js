@@ -15,6 +15,8 @@ const defaultPrintPrices = {
 };
 let syncQueue = [];
 let syncSettings = { endpoint: '' };
+let currentInvoiceSaleId = null;
+let currentDiscount = { type: 'none', value: 0 };
 // Ensure storage is internal/offline (using localStorage)
 const USE_LOCAL_DB = true; // true => localStorage only
 
@@ -54,7 +56,6 @@ function initData() {
     sales = JSON.parse(localStorage.getItem("nova_sales"));
     ledger = JSON.parse(localStorage.getItem("nova_ledger"));
     initPrintPrices();
-    initSync();
 }
 
 function initPrintPrices() {
@@ -118,40 +119,6 @@ function saveData(key, data) {
     localStorage.setItem(key, JSON.stringify(data));
 }
 
-/* ================= SYNC (ONLINE/OFFLINE) ================= */
-function initSync() {
-    const q = JSON.parse(localStorage.getItem('nova_sync_queue') || '[]');
-    syncQueue = Array.isArray(q) ? q : [];
-    const s = JSON.parse(localStorage.getItem('nova_sync_settings') || '{}');
-    syncSettings = s && typeof s === 'object' ? s : { endpoint: '' };
-
-    updateNetworkUI();
-
-    if (navigator.onLine) processSyncQueue();
-
-    window.addEventListener('online', () => { updateNetworkUI(); processSyncQueue(); });
-    window.addEventListener('offline', () => { updateNetworkUI(); });
-    // expose a save button if exists
-    const saveBtn = document.getElementById('save-sync-settings');
-    if (saveBtn) saveBtn.addEventListener('click', () => {
-        const inp = document.getElementById('sync-endpoint');
-        if (inp) {
-            saveSyncSettings({ endpoint: inp.value.trim() });
-            alert('تم حفظ إعدادات المزامنة');
-        }
-    });
-    const inp = document.getElementById('sync-endpoint');
-    if (inp) inp.value = syncSettings.endpoint || '';
-}
-
-function updateNetworkUI() {
-    const indicator = document.getElementById('network-indicator');
-    const text = document.getElementById('network-text');
-    if (!indicator || !text) return;
-    if (navigator.onLine) { indicator.textContent = '🟢'; text.textContent = 'أونلاين'; }
-    else { indicator.textContent = '🔴'; text.textContent = 'أوفلاين'; }
-}
-
 function enqueueSync(item) {
     item._queuedAt = new Date().toISOString();
     item._id = item._id || ('q-' + Date.now() + '-' + Math.floor(Math.random()*1000));
@@ -159,8 +126,7 @@ function enqueueSync(item) {
     localStorage.setItem('nova_sync_queue', JSON.stringify(syncQueue));
 }
 
-async function processSyncQueue() {
-    if (!navigator.onLine) return;
+async function processSyncQueue() { // This function remains but won't be called automatically by network events
     if (!syncSettings.endpoint) return;
     while (syncQueue.length > 0) {
         const item = syncQueue[0];
@@ -197,8 +163,68 @@ if (typeof window !== 'undefined' && typeof window.lucide === 'undefined') {
 
 document.addEventListener("DOMContentLoaded", () => {
     initData();
+    // Remove sync settings setup as initSync is removed
+    // const inp = document.getElementById('sync-endpoint');
+    // if (inp) inp.value = syncSettings.endpoint || '';
+
     updateLiveDate();
+
+    // Toggle Print Calculator
+    const quickPrintBody = document.getElementById("quick-print-body");
+    const togglePrintCalcBtn = document.getElementById("toggle-print-calc-btn");
+    const togglePrintCalcIcon = togglePrintCalcBtn ? togglePrintCalcBtn.querySelector('i') : null;
+
+    // Load initial state from localStorage
+    const savedPrintCalcState = localStorage.getItem("nova_print_calc_hidden");
+    let isPrintCalcHidden = savedPrintCalcState === "true"; // Default to false if not set
+
+    function updatePrintCalcUI() {
+        if (quickPrintBody) {
+            if (isPrintCalcHidden) {
+                quickPrintBody.style.display = "none";
+                if (togglePrintCalcIcon) togglePrintCalcIcon.setAttribute("data-lucide", "chevron-down");
+            } else {
+                quickPrintBody.style.display = "block";
+                if (togglePrintCalcIcon) togglePrintCalcIcon.setAttribute("data-lucide", "chevron-up");
+            }
+            lucide.createIcons(); // Re-render icons after changing data-lucide attribute
+        }
+    }
+
+    if (togglePrintCalcBtn) {
+        togglePrintCalcBtn.addEventListener("click", () => {
+            isPrintCalcHidden = !isPrintCalcHidden;
+            localStorage.setItem("nova_print_calc_hidden", isPrintCalcHidden);
+            updatePrintCalcUI();
+        });
+    }
+    updatePrintCalcUI(); // Apply initial state on load
+
     switchTab("dashboard");
+    resetDiscountState();
+
+    const discountType = document.getElementById("discount-type");
+    const discountValue = document.getElementById("discount-value");
+    const clearDiscountBtn = document.getElementById("btn-clear-discount");
+
+    if (discountType && discountValue) {
+        discountType.addEventListener("change", () => {
+            currentDiscount.type = discountType.value;
+            updateDiscountControls();
+            updateCartSummary();
+        });
+
+        discountValue.addEventListener("input", () => {
+            currentDiscount.value = Number(discountValue.value) || 0;
+            updateCartSummary();
+        });
+    }
+
+    if (clearDiscountBtn) {
+        clearDiscountBtn.addEventListener("click", () => {
+            resetDiscountState();
+        });
+    }
     
     // Set up sidebar clicks
     document.querySelectorAll(".menu-item").forEach(item => {
@@ -216,8 +242,8 @@ document.addEventListener("DOMContentLoaded", () => {
     
     function updateThemeIcon(isLight) {
         if (!themeIcon) return;
-        themeIcon.textContent = isLight ? "🌙" : "☀️";
         themeIcon.setAttribute("data-lucide", isLight ? "moon" : "sun");
+        lucide.createIcons();
     }
     
     if (savedTheme === "light") {
@@ -435,6 +461,17 @@ if (btnAddCopyDirect) {
     
     document.getElementById("customers-search").addEventListener("input", renderCustomersTable);
 
+    const inventoryFileInput = document.getElementById("inventory-file-input");
+    const importProductsBtn = document.getElementById("btn-import-products");
+
+    if (importProductsBtn && inventoryFileInput) {
+        importProductsBtn.addEventListener("click", () => inventoryFileInput.click());
+        inventoryFileInput.addEventListener("change", async (e) => {
+            await handleInventoryImport(e.target.files);
+            e.target.value = "";
+        });
+    }
+
     document.getElementById("btn-add-product").addEventListener("click", () => {
         document.getElementById("product-form").reset();
         document.getElementById("edit-product-id").value = "";
@@ -532,6 +569,101 @@ function switchTab(tabId) {
     lucide.createIcons();
 }
 
+function updateDiscountControls() {
+    const typeEl = document.getElementById("discount-type");
+    const valueEl = document.getElementById("discount-value");
+    if (!typeEl || !valueEl) return;
+
+    const isEnabled = typeEl.value !== "none";
+    valueEl.disabled = !isEnabled;
+    if (typeEl.value === "percent") {
+        valueEl.placeholder = "مثال: 10";
+        valueEl.step = "1";
+    } else if (typeEl.value === "amount") {
+        valueEl.placeholder = "مثال: 5000";
+        valueEl.step = "500";
+    }
+}
+
+function resetDiscountState() {
+    currentDiscount = { type: 'none', value: 0 };
+    const typeEl = document.getElementById("discount-type");
+    const valueEl = document.getElementById("discount-value");
+    if (typeEl) typeEl.value = "none";
+    if (valueEl) valueEl.value = "";
+    updateDiscountControls();
+    updateCartSummary();
+}
+
+function getCartSubtotal() {
+    return cart.reduce((sum, item) => sum + (item.sellPrice * item.qty), 0);
+}
+
+function calculateDiscountAmount(subtotal) {
+    if (!subtotal || currentDiscount.type === "none") return 0;
+
+    const value = Number(currentDiscount.value) || 0;
+    if (value <= 0) return 0;
+
+    if (currentDiscount.type === "percent") {
+        const percent = Math.min(100, Math.max(0, value));
+        return Math.max(0, subtotal * (percent / 100));
+    }
+
+    if (currentDiscount.type === "amount") {
+        return Math.max(0, Math.min(subtotal, value));
+    }
+
+    return 0;
+}
+
+function getCurrentSaleTotals() {
+    const subtotal = getCartSubtotal();
+    const discountAmount = calculateDiscountAmount(subtotal);
+    const finalTotal = Math.max(0, subtotal - discountAmount);
+    return { subtotal, discountAmount, finalTotal };
+}
+
+function updateCartSummary() {
+    const { subtotal, discountAmount, finalTotal } = getCurrentSaleTotals();
+    const subtotalEl = document.getElementById("cart-subtotal-price");
+    const discountEl = document.getElementById("cart-discount-amount");
+    const totalEl = document.getElementById("cart-total-price");
+
+    if (subtotalEl) subtotalEl.innerText = formatCurrency(subtotal);
+    if (discountEl) discountEl.innerText = formatCurrency(discountAmount);
+    if (totalEl) totalEl.innerText = formatCurrency(finalTotal);
+}
+
+function getAccountingNetForSale(sale) {
+    const originalTotal = sale.items.reduce((sum, item) => sum + (item.sellPrice * item.qty), 0);
+    const discountType = sale.discountType || "none";
+    const discountValue = Number(sale.discountValue) || 0;
+    const discountAmount = Number(sale.discountAmount) || 0;
+
+    let salesTotal = 0;
+    let printTotal = 0;
+
+    sale.items.forEach(item => {
+        const lineTotal = item.sellPrice * item.qty;
+        let lineNet = lineTotal;
+
+        if (discountType === "percent" && discountValue > 0) {
+            lineNet = lineTotal * (1 - (discountValue / 100));
+        } else if (discountType === "amount" && discountAmount > 0 && originalTotal > 0) {
+            lineNet = lineTotal - ((lineTotal / originalTotal) * discountAmount);
+        }
+
+        if (item.category === "print") {
+            printTotal += lineNet;
+        } else {
+            salesTotal += lineNet;
+        }
+    });
+
+    return { salesTotal, printTotal };
+}
+
 // ==================== DASHBOARD LOGIC ====================
 
 function updateDashboard() {
@@ -541,6 +673,7 @@ function updateDashboard() {
 
     // From Sales
     sales.forEach(sale => {
+        if (sale.returned) return;
         totalRevenues += sale.total;
         sale.items.forEach(item => {
             totalCostOfGoodsSold += (item.qty * item.buyPrice);
@@ -603,6 +736,7 @@ function updateDashboard() {
     // 3. Render lists on dashboard
     renderRecentSales();
     renderRecentRepairs();
+    lucide.createIcons();
 }
 
 function renderRecentSales() {
@@ -618,15 +752,22 @@ function renderRecentSales() {
 
     recent.forEach(sale => {
         const tr = document.createElement("tr");
+        const returnAction = sale.returned ?
+            `<span class="badge badge-danger">مرتجع</span>` :
+            `<button class="btn-action delete" onclick="returnSale('${sale.id}')" title="إرجاع الفاتورة"><i data-lucide="rotate-ccw"></i></button>`;
+
         tr.innerHTML = `
             <td><strong>${sale.id}</strong></td>
             <td>${sale.customerName}</td>
             <td>${sale.date.split(" ")[0]}</td>
             <td class="text-green font-bold">${formatCurrency(sale.total)}</td>
             <td>
-                <button class="btn-action edit" onclick="viewInvoice('${sale.id}')" title="عرض الفاتورة">
-                    <i data-lucide="eye"></i>
-                </button>
+                <div class="flex-row gap-2">
+                    <button class="btn-action edit" onclick="viewInvoice('${sale.id}')" title="عرض الفاتورة">
+                        <i data-lucide="eye"></i>
+                    </button>
+                    ${returnAction}
+                </div>
             </td>
         `;
         tbody.appendChild(tr);
@@ -711,7 +852,7 @@ function renderPOSProducts() {
 
     filtered.forEach(p => {
         const card = document.createElement("div");
-        card.className = "product-item-card";
+        card.className = "product-item-card p-4 fade-in";
         if (p.qty === 0) card.classList.add("out-of-stock");
         else if (p.qty <= 3) card.classList.add("low-stock");
 
@@ -723,7 +864,7 @@ function renderPOSProducts() {
 
         card.innerHTML = `
             <div>
-                <span class="product-card-category">${catName}</span>
+                <span class="badge" style="background:rgba(255,255,255,0.1); margin-bottom:8px; display:inline-block;">${catName}</span>
                 <h3 class="product-card-name">${p.name}</h3>
             </div>
             <div class="product-card-bottom">
@@ -769,31 +910,32 @@ function renderCart() {
 
     if (cart.length === 0) {
         list.innerHTML = `
-            <div class="empty-cart-message">
-                <i data-lucide="shopping-bag"></i>
+            <div class="empty-cart-message py-10">
+                <i data-lucide="shopping-cart" size="48" class="mb-4"></i>
                 <p>السلة فارغة. اختر منتجات للبيع</p>
             </div>
         `;
         document.getElementById("cart-total-items").innerText = "0";
-        document.getElementById("cart-total-price").innerText = "0 د.ع";
+        updateCartSummary();
         lucide.createIcons();
         return;
     }
 
     let totalItems = 0;
-    let totalPrice = 0;
 
     cart.forEach((item, index) => {
         totalItems += item.qty;
-        totalPrice += (item.sellPrice * item.qty);
 
         const product = products.find(p => p.id === item.productId);
+        const hasProduct = !!product;
+        const maxQty = hasProduct ? product.qty : Infinity;
+        const hasImei = hasProduct && item.category === "phone" && product.imeis.length > 0;
 
         const cartItemDiv = document.createElement("div");
         cartItemDiv.className = "cart-item";
         
         let imeiSelectHtml = "";
-        if (item.category === "phone" && product.imeis.length > 0) {
+        if (hasImei) {
             imeiSelectHtml = `
                 <select class="form-select cart-item-imei-select" onchange="updateCartItemImei(${index}, this.value)">
                     ${product.imeis.map(imei => `<option value="${imei}" ${item.selectedImei === imei ? 'selected' : ''}>IMEI: ${imei}</option>`).join("")}
@@ -804,13 +946,13 @@ function renderCart() {
         cartItemDiv.innerHTML = `
             <div class="cart-item-info">
                 <h4 class="cart-item-name">${item.name}</h4>
-                <p class="cart-item-price">${formatCurrency(item.sellPrice)}</p>
+                <p class="cart-item-price text-sm">${formatCurrency(item.sellPrice)}</p>
                 ${imeiSelectHtml}
             </div>
-            <div class="cart-item-actions">
-                <input type="number" class="cart-qty-input" value="${item.qty}" min="1" max="${product.qty}" onchange="updateCartItemQty(${index}, this.value)">
+            <div class="cart-item-actions gap-2">
+                <input type="number" class="cart-qty-input" value="${item.qty}" min="1" max="${maxQty}" onchange="updateCartItemQty(${index}, this.value)">
                 <button class="btn-action delete" onclick="removeFromCart(${index})">
-                    <i data-lucide="x"></i>
+                    <i data-lucide="trash-2" size="18"></i>
                 </button>
             </div>
         `;
@@ -818,23 +960,27 @@ function renderCart() {
     });
 
     document.getElementById("cart-total-items").innerText = totalItems;
-    document.getElementById("cart-total-price").innerText = formatCurrency(totalPrice);
-    
+    updateCartSummary();
     lucide.createIcons();
 }
 
 function updateCartItemQty(index, qty) {
     qty = parseInt(qty);
-    if(isNaN(qty) || qty < 1) qty = 1;
-    
+    if (isNaN(qty) || qty < 1) qty = 1;
+
     const item = cart[index];
     const product = products.find(p => p.id === item.productId);
-    
-    if (qty > product.qty) {
-        alert(`أقصى كمية متوفرة هي ${product.qty}`);
-        qty = product.qty;
+    const maxQty = product ? product.qty : Infinity;
+
+    if (qty > maxQty) {
+        if (product) {
+            alert(`أقصى كمية متوفعة هي ${product.qty}`);
+            qty = product.qty;
+        } else {
+            qty = 1;
+        }
     }
-    
+
     item.qty = qty;
     renderCart();
 }
@@ -850,6 +996,7 @@ function removeFromCart(index) {
 
 function clearCart() {
     cart = [];
+    resetDiscountState();
     renderCart();
 }
 
@@ -875,13 +1022,10 @@ function completeSale() {
     const payMethod = document.querySelector('input[name="payment-method"]:checked').value;
     const invoiceId = "INV-" + (sales.length + 1001);
     const dateStr = formatDateTime(new Date());
-
-    let saleTotal = 0;
+    const { subtotal, discountAmount, finalTotal } = getCurrentSaleTotals();
 
     // Deduct stock and finalize items
     cart.forEach(item => {
-        saleTotal += (item.sellPrice * item.qty);
-        
         const product = products.find(p => p.id === item.productId);
         if (product) {
             product.qty -= item.qty;
@@ -900,7 +1044,11 @@ function completeSale() {
         customerPhone: customerPhone,
         date: dateStr,
         items: [...cart],
-        total: saleTotal,
+        subtotal: subtotal,
+        discountAmount: discountAmount,
+        discountType: currentDiscount.type,
+        discountValue: currentDiscount.value,
+        total: finalTotal,
         payMethod: payMethod
     };
 
@@ -912,6 +1060,7 @@ function completeSale() {
 
     // Clear cart & Refresh GUI
     cart = [];
+    resetDiscountState();
     renderCart();
     renderPOSProducts();
     
@@ -946,10 +1095,25 @@ function displayInvoice(sale) {
         tbody.appendChild(tr);
     });
 
-    document.getElementById("inv-total-raw").innerText = formatCurrency(sale.total);
+    const subtotal = Number(sale.subtotal) || (sale.total + Number(sale.discountAmount || 0));
+    const discountAmount = Number(sale.discountAmount) || 0;
+
+    document.getElementById("inv-discount-amount").innerText = formatCurrency(discountAmount);
+    document.getElementById("inv-total-raw").innerText = formatCurrency(subtotal);
     document.getElementById("inv-total-net").innerText = formatCurrency(sale.total);
 
+    currentInvoiceSaleId = sale.id;
+    const returnButton = document.getElementById("btn-return-sale");
+    if (returnButton) {
+        if (sale.returned) {
+            returnButton.style.display = "none";
+        } else {
+            returnButton.style.display = "inline-flex";
+        }
+    }
+
     openModal("invoice-modal");
+    lucide.createIcons();
 }
 
 function viewInvoice(saleId) {
@@ -959,8 +1123,386 @@ function viewInvoice(saleId) {
     }
 }
 
+function returnSale(saleId) {
+    const sale = sales.find(s => s.id === saleId);
+    if(!sale || sale.returned) return;
+
+    if(!confirm(`هل تريد إرجاع فاتورة ${sale.id} بالكامل؟ سيتم استرجاع الكميات إلى المخزون.`)) return;
+
+    sale.items.forEach(item => {
+        const product = products.find(p => p.id === item.productId);
+        if (product) {
+            product.qty += item.qty;
+            if (product.category === "phone" && item.selectedImei) {
+                if (!product.imeis.includes(item.selectedImei)) {
+                    product.imeis.push(item.selectedImei);
+                }
+            }
+        }
+    });
+
+    sale.returned = true;
+    sale.returnDate = formatDateTime(new Date());
+
+    saveData("nova_sales", sales);
+    saveData("nova_products", products);
+    enqueueSync({ type: 'sale', action: 'return', payload: { id: sale.id, returnedAt: sale.returnDate } });
+
+    updateDashboard();
+    renderRecentSales();
+    renderInventoryTable();
+    renderAccountingTab();
+    renderCustomersTable();
+    try { renderPOSProducts(); } catch(e) {}
+
+    if (currentInvoiceSaleId === saleId) {
+        displayInvoice(sale);
+    }
+
+    alert("تمت عملية الإرجاع بنجاح.");
+}
+
 function printInvoice() {
     window.print();
+}
+
+function updateImportStatus(message, variant = "info") {
+    const statusEl = document.getElementById("inventory-import-status");
+    if (!statusEl) return;
+
+    statusEl.textContent = message;
+    if (variant === "success") {
+        statusEl.style.color = "var(--success, #10b981)";
+    } else if (variant === "error") {
+        statusEl.style.color = "var(--danger, #ef4444)";
+    } else {
+        statusEl.style.color = "var(--text-secondary, #6b7280)";
+    }
+}
+
+function normalizeCategory(value) {
+    const normalized = String(value || "").trim().toLowerCase();
+    if (["phone", "mobile", "موبايل", "هاتف", "جوال"].includes(normalized)) return "phone";
+    if (["accessory", "اكسسوار", "ملحق"].includes(normalized)) return "accessory";
+    if (["part", "piece", "قطع صيانة", "قطع", "parts"].includes(normalized)) return "part";
+    if (["print", "printing", "copy", "استنساخ", "طباعة", "print & copy"].includes(normalized)) return "print";
+    return normalized;
+}
+
+function parseNumber(value) {
+    if (value === undefined || value === null || value === "") return 0;
+    const sanitized = String(value).replace(/,/g, "").replace(/[^0-9.\-]/g, "");
+    const num = Number(sanitized);
+    return Number.isFinite(num) ? num : 0;
+}
+
+function parseImeis(value) {
+    if (!value) return [];
+    if (Array.isArray(value)) {
+        return value.map(item => String(item).trim()).filter(Boolean);
+    }
+
+    return String(value)
+        .split(/[\n,;/|]+/)
+        .map(item => item.trim())
+        .filter(Boolean);
+}
+
+function getHeaderKey(value) {
+    const normalized = String(value || "")
+        .trim()
+        .toLowerCase()
+        .replace(/[^a-z0-9ء-ي]/g, "");
+
+    if (["name", "الاسم"].includes(normalized)) return "name";
+    if (["سعرالدولار"].includes(normalized)) return "dollarPrice";
+    if (["سعرالشراء"].includes(normalized)) return "buyPriceRaw";
+    if (["الكمية"].includes(normalized)) return "qty";
+    if (["المصاريف"].includes(normalized)) return "expenses";
+    if (["سعرالبيع"].includes(normalized)) return "sellPrice";
+    return normalized;
+}
+
+function parseDelimitedRows(text, delimiter) {
+    const rows = [];
+    let currentRow = [];
+    let currentCell = "";
+    let inQuotes = false;
+
+    for (let i = 0; i < text.length; i++) {
+        const char = text[i];
+        const nextChar = text[i + 1];
+
+        if (char === '"') {
+            if (inQuotes && nextChar === '"') {
+                currentCell += '"';
+                i++;
+            } else {
+                inQuotes = !inQuotes;
+            }
+            continue;
+        }
+
+        if (char === delimiter && !inQuotes) {
+            currentRow.push(currentCell.trim());
+            currentCell = "";
+            continue;
+        }
+
+        if ((char === '\n' || char === '\r') && !inQuotes) {
+            if (char === '\r' && nextChar === '\n') {
+                i++;
+            }
+            currentRow.push(currentCell.trim());
+            if (currentRow.some(cell => cell !== "")) {
+                rows.push(currentRow);
+            }
+            currentRow = [];
+            currentCell = "";
+            continue;
+        }
+
+        currentCell += char;
+    }
+
+    if (currentCell !== "" || currentRow.length > 0) {
+        currentRow.push(currentCell.trim());
+        if (currentRow.some(cell => cell !== "")) {
+            rows.push(currentRow);
+        }
+    }
+
+    return rows;
+}
+
+function parseTableRows(text) {
+    const delimiters = [",", ";", "\t", "|"];
+    const cleanedText = text.trim();
+
+    if (!cleanedText) {
+        throw new Error("الملف فارغ");
+    }
+
+    if (cleanedText.startsWith("[") || cleanedText.startsWith("{")) {
+        return { type: "json", data: JSON.parse(cleanedText) };
+    }
+
+    for (const delimiter of delimiters) {
+        const rows = parseDelimitedRows(cleanedText, delimiter);
+        if (!rows.length) continue;
+
+        const headerRow = rows[0].map(getHeaderKey);
+        const hasKnownHeader = headerRow.some(key => ["name", "barcode", "category", "qty", "buyprice", "sellprice", "imeis"].includes(key));
+
+        if (hasKnownHeader) {
+            return { type: "table", rows };
+        }
+    }
+
+    throw new Error("تعذر التعرف على الهيكل الداخلي للملف. استخدم CSV أو JSON أو Excel يحتوي على الأعمدة المطلوبة.");
+}
+
+function normalizeImportedRow(row, index) {
+    let record = {};
+
+    if (row && typeof row === "object" && !Array.isArray(row)) {
+        record = row;
+    } else if (Array.isArray(row)) {
+        record = {};
+        row.forEach((cell, cellIndex) => {
+            const key = cellIndex === 0 ? "name" : cellIndex === 1 ? "dollarPrice" : cellIndex === 2 ? "buyPriceRaw" : cellIndex === 3 ? "qty" : cellIndex === 4 ? "expenses" : cellIndex === 5 ? "sellPrice" : `extra_${cellIndex}`;
+            record[key] = cell;
+        });
+    } else {
+        throw new Error(`الصف رقم ${index + 1} غير صالح`);
+    }
+
+    const name = String(record.name || "").trim();
+    if (!name) {
+        throw new Error(`الصف رقم ${index + 1} لا يحتوي على اسم منتج`);
+    }
+
+    let category = normalizeCategory(record.category);
+    if (!category || !["phone", "accessory", "part", "print"].includes(category)) {
+        category = "accessory";
+    }
+
+    const qty = Math.max(0, Math.round(parseNumber(record.qty)));
+    const buyPriceRaw = parseNumber(record.buyPriceRaw);
+    const expenses = parseNumber(record.expenses);
+    const buyPrice = buyPriceRaw + expenses;
+
+    const sellPrice = parseNumber(record.sellPrice) || buyPrice;
+    const barcode = String(record.barcode || record["باركود"] || "").trim() || `imp-${Date.now()}-${index + 1}`;
+    const imeis = parseImeis(record.imeis || record.imei || record["الـ IMEI"] || record["IMEI"] || "");
+
+    return {
+        id: `p${Date.now()}-${index + 1}`,
+        barcode,
+        name,
+        category,
+        qty,
+        buyPrice,
+        sellPrice,
+        imeis
+    };
+}
+
+function normalizeJsonImport(data) {
+    if (Array.isArray(data)) {
+        return data.map((item, index) => normalizeImportedRow(item, index));
+    }
+
+    if (data && typeof data === "object" && Array.isArray(data.rows)) {
+        return data.rows.map((item, index) => normalizeImportedRow(item, index));
+    }
+
+    if (data && typeof data === "object") {
+        return [normalizeImportedRow(data, 0)];
+    }
+
+    throw new Error("تنسيق JSON غير مدعوم");
+}
+
+function createProductFromImport(record) {
+    return {
+        id: record.id || `p${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+        barcode: record.barcode || `imp-${Date.now()}`,
+        name: record.name,
+        category: record.category,
+        qty: Math.max(0, Number(record.qty) || 0),
+        buyPrice: Number(record.buyPrice) || 0,
+        sellPrice: Number(record.sellPrice) || 0,
+        imeis: Array.isArray(record.imeis) ? record.imeis : parseImeis(record.imeis)
+    };
+}
+
+async function parseImportedFile(file) {
+    const extension = file.name.split(".").pop().toLowerCase();
+
+    if (extension === "xlsx" || extension === "xls") {
+        if (typeof window.XLSX === "undefined") {
+            throw new Error("لم يتم تحميل مكتبة Excel. الرجاء إعادة تحميل الصفحة أو استخدام ملف CSV/JSON.");
+        }
+
+        const workbook = window.XLSX.read(await file.arrayBuffer(), { type: "array" });
+        const sheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[sheetName];
+        const rows = window.XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+
+        if (!Array.isArray(rows) || rows.length === 0) {
+            throw new Error("الملف لا يحتوي على بيانات قابلة للقراءة");
+        }
+
+        const headers = rows[0].map(getHeaderKey);
+        const hasKnownHeader = headers.some(key => ["name", "barcode", "category", "qty", "buyprice", "sellprice", "imeis"].includes(key));
+        if (!hasKnownHeader) {
+            throw new Error("الملف لا يحتوي على الأعمدة المطلوبة للمنتجات");
+        }
+
+        return rows.slice(1).map((row) => {
+            const record = {};
+            headers.forEach((header, index) => {
+                record[header] = row[index];
+            });
+            return record;
+        });
+    }
+
+    const text = await file.text();
+    const parsed = parseTableRows(text);
+
+    if (parsed.type === "json") {
+        return normalizeJsonImport(parsed.data);
+    }
+
+    const rows = parsed.rows;
+    const headers = rows[0].map(getHeaderKey);
+    return rows.slice(1).map((row) => {
+        const record = {};
+        headers.forEach((header, index) => {
+            record[header] = row[index];
+        });
+        return record;
+    });
+}
+
+function applyImportedProducts(records) {
+    let added = 0;
+    let updated = 0;
+    let skipped = 0;
+
+    records.forEach((record, index) => {
+        try {
+            const normalized = createProductFromImport(normalizeImportedRow(record, index));
+            const existing = products.find(product => product.barcode && product.barcode === normalized.barcode);
+
+            if (existing) {
+                existing.name = normalized.name;
+                existing.category = normalized.category;
+                existing.qty = Math.max(0, existing.qty + normalized.qty);
+                existing.buyPrice = normalized.buyPrice;
+                existing.sellPrice = normalized.sellPrice || normalized.buyPrice;
+                existing.imeis = Array.from(new Set([...(existing.imeis || []), ...(normalized.imeis || [])]));
+                updated++;
+                return;
+            }
+
+            products.push(normalized);
+            added++;
+        } catch (error) {
+            skipped++;
+            console.warn("Skipped import row", index + 1, error);
+        }
+    });
+
+    return { added, updated, skipped };
+}
+
+async function handleInventoryImport(fileList) {
+    if (!fileList || fileList.length === 0) {
+        return;
+    }
+
+    updateImportStatus("جارٍ قراءة الملفات...", "info");
+
+    products = []; // مسح جميع المنتجات السابقة لبدء استيراد نظيف
+
+    let added = 0;
+    let updated = 0;
+    let skipped = 0;
+    const errors = [];
+
+    for (const file of Array.from(fileList)) {
+        try {
+            const records = await parseImportedFile(file);
+            const result = applyImportedProducts(records);
+            added += result.added;
+            updated += result.updated;
+            skipped += result.skipped;
+        } catch (error) {
+            errors.push(`${file.name}: ${error.message}`);
+        }
+    }
+
+    if (added || updated) {
+        saveData("nova_products", products);
+        renderInventoryTable();
+        renderPOSProducts();
+        updateDashboard();
+    }
+
+    if (errors.length > 0) {
+        updateImportStatus(`تعذر استيراد بعض الملفات. تمت إضافة ${added} منتجات، وتحديث ${updated}. ${errors.slice(0, 2).join(" | ")}`, "error");
+        return;
+    }
+
+    if (added === 0 && updated === 0) {
+        updateImportStatus("لم يتم العثور على بيانات قابلة للاستيراد في الملفات المحددة.", "error");
+        return;
+    }
+
+    updateImportStatus(`تمت الاستيراد بنجاح: ${added} مضاف، ${updated} محدث، ${skipped} تم تخطيه.`, "success");
 }
 
 // ==================== INVENTORY LOGIC ====================
@@ -1005,9 +1547,9 @@ function renderInventoryTable() {
             <td><span style="font-size: 11px;">${p.imeis && p.imeis.length > 0 ? p.imeis.join(", ") : '-'}</span></td>
             <td>${statusBadge}</td>
             <td>
-                <div class="flex-row">
-                    <button class="btn-action edit" onclick="editProduct('${p.id}')">
-                        <i data-lucide="edit-2"></i>
+                <div class="flex-row gap-2">
+                    <button class="btn-action edit" onclick="editProduct('${p.id}')" title="تعديل">
+                        <i data-lucide="pencil"></i>
                     </button>
                     <button class="btn-action delete" onclick="deleteProduct('${p.id}')">
                         <i data-lucide="trash-2"></i>
@@ -1140,14 +1682,14 @@ function renderMaintenanceTable() {
             statusBadge = `<span class="badge badge-warning">قيد الإصلاح</span>`;
             actionBtn = `
                 <button class="btn-action done" onclick="updateRepairStatus('${ticket.id}', 'ready')" title="تحديد كجاهز">
-                    <i data-lucide="check"></i>
+                    <i data-lucide="check-circle"></i>
                 </button>
             `;
         } else if (ticket.status === "ready") {
             statusBadge = `<span class="badge badge-success">جاهز للتسليم</span>`;
             actionBtn = `
                 <button class="btn-action done" onclick="updateRepairStatus('${ticket.id}', 'delivered')" title="تأكيد التسليم للزبون">
-                    <i data-lucide="truck"></i>
+                    <i data-lucide="package-check"></i>
                 </button>
             `;
         } else {
@@ -1171,10 +1713,10 @@ function renderMaintenanceTable() {
             <td class="text-green">${formatCurrency(ticket.advance)}</td>
             <td class="${rem > 0 ? 'text-red font-bold' : ''}">${formatCurrency(rem)}</td>
             <td>
-                <div class="flex-row">
+                <div class="flex-row gap-2">
                     ${actionBtn}
                     <button class="btn-action edit" onclick="editRepair('${ticket.id}')" title="تعديل">
-                        <i data-lucide="edit-2"></i>
+                        <i data-lucide="pencil"></i>
                     </button>
                     <button class="btn-action delete" onclick="deleteRepair('${ticket.id}')" title="حذف">
                         <i data-lucide="trash-2"></i>
@@ -1303,7 +1845,7 @@ function renderCustomersTable() {
 
     filtered.forEach(c => {
         // Calculate totals for each customer
-        const custSales = sales.filter(s => s.customerId === c.id);
+        const custSales = sales.filter(s => s.customerId === c.id && !s.returned);
         const purchaseCount = custSales.length;
         const totalPaid = custSales.reduce((sum, s) => sum + s.total, 0);
 
@@ -1315,11 +1857,11 @@ function renderCustomersTable() {
             <td>${purchaseCount} عمليات</td>
             <td class="text-green font-bold">${formatCurrency(totalPaid)}</td>
             <td>
-                <div class="flex-row">
-                    <button class="btn-action edit" onclick="editCustomer('${c.id}')">
-                        <i data-lucide="edit-2"></i>
+                <div class="flex-row gap-2">
+                    <button class="btn-action edit" onclick="editCustomer('${c.id}')" title="تعديل">
+                        <i data-lucide="pencil"></i>
                     </button>
-                    <button class="btn-action delete" onclick="deleteCustomer('${c.id}')">
+                    <button class="btn-action delete" onclick="deleteCustomer('${c.id}')" title="حذف">
                         <i data-lucide="trash-2"></i>
                     </button>
                 </div>
@@ -1389,13 +1931,10 @@ function renderAccountingTab() {
     let printTotal = 0;
     
     sales.forEach(s => {
-        s.items.forEach(item => {
-            if (item.category === "print") {
-                printTotal += (item.sellPrice * item.qty);
-            } else {
-                salesTotal += (item.sellPrice * item.qty);
-            }
-        });
+        if (s.returned) return;
+        const net = getAccountingNetForSale(s);
+        salesTotal += net.salesTotal;
+        printTotal += net.printTotal;
     });
 
     let repairsTotal = 0;
@@ -1420,6 +1959,7 @@ function renderAccountingTab() {
     // Calculate product cost of sold items to compute net profit
     let cogs = 0;
     sales.forEach(sale => {
+        if (sale.returned) return;
         sale.items.forEach(item => {
             cogs += (item.qty * item.buyPrice);
         });
@@ -1445,12 +1985,21 @@ function renderLedgerTable(salesTotal, repairsTotal) {
 
     // Add Sales (Summarized or grouped)
     sales.forEach(s => {
-        allTransactions.push({
-            date: s.date,
-            description: `بيع بضاعة - فاتورة رقم ${s.id}`,
-            type: "revenue",
-            amount: s.total
-        });
+        if (!s.returned) {
+            allTransactions.push({
+                date: s.date,
+                description: `بيع بضاعة - فاتورة رقم ${s.id}`,
+                type: "revenue",
+                amount: s.total
+            });
+        } else {
+            allTransactions.push({
+                date: s.returnDate || s.date,
+                description: `مرتجع بيع - فاتورة رقم ${s.id}`,
+                type: "expense",
+                amount: s.total
+            });
+        }
     });
 
     // Add Repairs
